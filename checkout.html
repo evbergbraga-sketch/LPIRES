@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout — IRES Embaixadoras</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #3a0e1d; --bg2: #2d0a16; --card: rgba(255,255,255,0.04);
+  --pink: #5c1a2e; --accent: #c49a7a; --accent2: #d4aa8a;
+  --light: #fdf8f3; --gray: #b89088; --border: rgba(196,154,122,0.2);
+  --error: #ff6b6b; --success: #6bcb77;
+  --ff: 'DM Sans', system-ui, sans-serif;
+  --ff-serif: 'Playfair Display', Georgia, serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--light); font-family:var(--ff); min-height:100vh; display:flex; flex-direction:column; }
+
+nav {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 32px; border-bottom:1px solid var(--border);
+}
+.logo { display:flex; align-items:center; gap:12px; }
+.logo-circle {
+  width:40px; height:40px; border-radius:50%;
+  background:var(--pink); border:1px solid var(--border);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.logo-circle span:first-child { font-family:var(--ff-serif); font-size:13px; font-weight:600; }
+.logo-circle span:last-child { font-size:7px; letter-spacing:1.5px; color:var(--accent); }
+.logo-name { font-size:15px; font-weight:600; }
+.logo-name em { font-family:var(--ff-serif); font-style:italic; color:var(--accent); }
+.secure-badge { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--gray); }
+
+main {
+  flex:1; display:grid; grid-template-columns:1fr 420px;
+  gap:0; max-width:1000px; margin:0 auto; width:100%;
+  padding:48px 24px; align-items:start;
+}
+@media(max-width:760px) {
+  main { grid-template-columns:1fr; padding:24px 16px; }
+  .summary { order:-1; }
+  .form-side { padding-right:0; }
+}
+
+.form-side { padding-right:48px; }
+.form-side h1 { font-family:var(--ff-serif); font-style:italic; font-size:2rem; font-weight:400; margin-bottom:8px; }
+.form-side h1 strong { font-style:normal; color:var(--accent); }
+.form-side p { color:var(--gray); font-size:14px; margin-bottom:36px; line-height:1.5; }
+
+.form-group { margin-bottom:20px; }
+label { display:block; font-size:12px; font-weight:600; color:var(--accent); margin-bottom:7px; letter-spacing:0.5px; text-transform:uppercase; }
+input {
+  width:100%; padding:14px 16px;
+  background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px;
+  color:var(--light); font-family:var(--ff); font-size:15px; outline:none;
+  transition:border-color 0.2s, background 0.2s;
+}
+input::placeholder { color:rgba(184,144,136,0.4); }
+input:focus { border-color:var(--accent); background:rgba(255,255,255,0.08); }
+input.error { border-color:var(--error); }
+.field-error { font-size:12px; color:var(--error); margin-top:5px; display:none; }
+.field-error.show { display:block; }
+.cpf-hint { margin-top:6px; font-size:12px; color:var(--gray); display:flex; align-items:center; gap:5px; }
+
+.btn-submit {
+  width:100%; padding:18px; margin-top:8px;
+  background:linear-gradient(135deg, var(--accent), #b8845c);
+  color:var(--bg2); border:none; border-radius:12px;
+  font-size:16px; font-weight:700; font-family:var(--ff);
+  cursor:pointer; transition:all 0.25s;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+}
+.btn-submit:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 24px rgba(196,154,122,0.35); }
+.btn-submit:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+.spinner {
+  width:18px; height:18px; border-radius:50%;
+  border:2px solid rgba(0,0,0,0.2); border-top-color:var(--bg2);
+  animation:spin 0.8s linear infinite; display:none;
+}
+.btn-submit.loading .spinner { display:block; }
+.btn-submit.loading .btn-text { display:none; }
+.guarantee { margin-top:14px; text-align:center; font-size:12px; color:var(--gray); }
+.terms { margin-top:10px; font-size:11px; color:var(--gray); text-align:center; line-height:1.5; }
+.terms a { color:var(--accent); text-decoration:none; }
+
+.summary {
+  background:rgba(255,255,255,0.04); border:1px solid var(--border);
+  border-radius:20px; padding:32px; position:sticky; top:24px;
+}
+.summary-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--accent); margin-bottom:20px; }
+.summary-product { display:flex; align-items:center; gap:16px; margin-bottom:24px; }
+.summary-icon {
+  width:56px; height:56px; border-radius:12px;
+  background:var(--pink); border:1px solid var(--border);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.summary-icon span:first-child { font-family:var(--ff-serif); font-size:14px; font-weight:600; }
+.summary-icon span:last-child { font-size:7px; letter-spacing:1.5px; color:var(--accent); }
+.summary-product-name { font-weight:700; font-size:16px; }
+.summary-product-sub { font-size:12px; color:var(--gray); margin-top:2px; }
+.divider { height:1px; background:var(--border); margin:20px 0; }
+.summary-line { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.summary-line span:first-child { font-size:14px; color:var(--gray); }
+.summary-line span:last-child { font-size:14px; color:var(--light); }
+.summary-line.total span:first-child { font-size:15px; font-weight:700; color:var(--light); }
+.summary-line.total span:last-child { font-size:22px; font-weight:700; color:var(--accent); }
+.summary-line.discount span:last-child { color:var(--success); }
+.summary-features { margin-top:24px; display:flex; flex-direction:column; gap:10px; }
+.sum-feat { display:flex; align-items:center; gap:10px; font-size:13px; color:var(--gray); }
+.sum-feat::before { content:'✓'; color:var(--success); font-weight:700; flex-shrink:0; }
+.summary-tests { margin-top:24px; }
+.sum-test {
+  padding:16px; border-radius:10px;
+  background:rgba(255,255,255,0.03); border:1px solid var(--border);
+  margin-bottom:10px;
+}
+.sum-test-quote { font-family:var(--ff-serif); font-style:italic; font-size:13px; color:var(--light); line-height:1.45; margin-bottom:10px; }
+.sum-test-author { font-size:11px; color:var(--accent); font-weight:600; }
+
+.error-banner {
+  display:none; background:rgba(255,107,107,0.1); border:1px solid rgba(255,107,107,0.3);
+  border-radius:10px; padding:14px 16px; margin-bottom:20px;
+  font-size:14px; color:#ff9090;
+}
+.error-banner.show { display:block; }
+
+@keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">
+    <div class="logo-circle"><span>ires</span><span>EMB.</span></div>
+    <div class="logo-name">ires <em>embaixadoras</em></div>
+  </div>
+  <div class="secure-badge">🔒 Checkout seguro</div>
+</nav>
+
+<main>
+  <div class="form-side">
+    <h1>Quase lá! <strong>Complete seu cadastro</strong></h1>
+    <p>Preencha seus dados abaixo para acessar o pagamento e garantir sua vaga como Embaixadora IRES.</p>
+
+    <div class="error-banner" id="errorBanner"></div>
+
+    <div class="form-group">
+      <label for="nome">Nome completo</label>
+      <input type="text" id="nome" placeholder="Seu nome completo" autocomplete="name">
+      <div class="field-error" id="nomeError">Por favor, informe seu nome completo.</div>
+    </div>
+    <div class="form-group">
+      <label for="whatsapp">WhatsApp</label>
+      <input type="tel" id="whatsapp" placeholder="(00) 90000-0000" autocomplete="tel">
+      <div class="field-error" id="whatsappError">Informe um número válido com DDD.</div>
+    </div>
+    <div class="form-group">
+      <label for="email">E-mail</label>
+      <input type="email" id="email" placeholder="seu@email.com" autocomplete="email">
+      <div class="field-error" id="emailError">Informe um e-mail válido.</div>
+    </div>
+    <div class="form-group">
+      <label for="cpf">CPF</label>
+      <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14" autocomplete="off">
+      <div class="cpf-hint">🔒 Necessário para emissão do seu recibo de pagamento</div>
+      <div class="field-error" id="cpfError">Informe um CPF válido.</div>
+    </div>
+
+    <button class="btn-submit" id="btnSubmit" onclick="handleCheckout()">
+      <div class="spinner"></div>
+      <span class="btn-text">Ir para Pagamento →</span>
+    </button>
+    <p class="guarantee">🔒 Pagamento processado pelo <strong>Asaas</strong> · Ambiente 100% seguro</p>
+    <p class="terms">Ao continuar você concorda com nossos <a href="#">Termos de Uso</a> e <a href="#">Política de Privacidade</a>.</p>
+  </div>
+
+  <div class="summary">
+    <div class="summary-title">Resumo do pedido</div>
+    <div class="summary-product">
+      <div class="summary-icon"><span>ires</span><span>EMB.</span></div>
+      <div>
+        <div class="summary-product-name">IRES Embaixadoras</div>
+        <div class="summary-product-sub">Acesso completo · Pagamento único</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="summary-line">
+      <span>Valor original</span>
+      <span style="text-decoration:line-through;color:var(--gray)">R$97,00</span>
+    </div>
+    <div class="summary-line discount">
+      <span>Desconto de lançamento</span>
+      <span>−R$67,10</span>
+    </div>
+    <div class="divider"></div>
+    <div class="summary-line total">
+      <span>Total</span>
+      <span>R$29,90</span>
+    </div>
+    <div class="summary-features">
+      <div class="sum-feat">Plataforma de pedidos completa</div>
+      <div class="sum-feat">Treinamentos em vídeo</div>
+      <div class="sum-feat">Criativos prontos para postar</div>
+      <div class="sum-feat">Comunidade exclusiva</div>
+      <div class="sum-feat">Suporte da equipe IRES</div>
+      <div class="sum-feat">Garantia de 7 dias</div>
+    </div>
+    <div class="divider"></div>
+    <div class="summary-tests">
+      <div class="sum-test">
+        <div class="sum-test-quote">"Entrei sem saber nada… hoje já estou vendendo!"</div>
+        <div class="sum-test-author">Mariana S. · Embaixadora há 3 meses</div>
+      </div>
+      <div class="sum-test">
+        <div class="sum-test-quote">"Os criativos prontos me salvaram no começo. Vale cada centavo."</div>
+        <div class="sum-test-author">Fernanda L. · Embaixadora há 2 meses</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ─── CONFIGURAÇÃO — substitua pela URL real do seu n8n ───────────────────────
+const N8N_WEBHOOK_URL = 'https://SEU_N8N/webhook/ires-checkout';
+
+// ─── MÁSCARAS ───────────────────────────────────────────────────────────────
+document.getElementById('cpf').addEventListener('input', function(e) {
+  let v = e.target.value.replace(/\D/g,'').substring(0,11);
+  if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+  else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+  else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+  e.target.value = v;
+});
+document.getElementById('whatsapp').addEventListener('input', function(e) {
+  let v = e.target.value.replace(/\D/g,'').substring(0,11);
+  if (v.length > 6) v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+  else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+  e.target.value = v;
+});
+
+// ─── VALIDAÇÃO CPF ──────────────────────────────────────────────────────────
+function validarCPF(cpf) {
+  cpf = cpf.replace(/\D/g,'');
+  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+  let s = 0, r;
+  for (let i = 1; i <= 9; i++) s += parseInt(cpf[i-1]) * (11 - i);
+  r = (s * 10) % 11; if (r === 10 || r === 11) r = 0;
+  if (r !== parseInt(cpf[9])) return false;
+  s = 0;
+  for (let i = 1; i <= 10; i++) s += parseInt(cpf[i-1]) * (12 - i);
+  r = (s * 10) % 11; if (r === 10 || r === 11) r = 0;
+  return r === parseInt(cpf[10]);
+}
+
+function setError(fieldId, errId, show) {
+  document.getElementById(fieldId).classList.toggle('error', show);
+  document.getElementById(errId).classList.toggle('show', show);
+  return show;
+}
+
+function validate() {
+  const nome = document.getElementById('nome').value.trim();
+  const wpp  = document.getElementById('whatsapp').value.replace(/\D/g,'');
+  const email = document.getElementById('email').value.trim();
+  const cpf  = document.getElementById('cpf').value;
+  let err = false;
+  if (nome.split(' ').length < 2 || nome.length < 4) err = setError('nome','nomeError',true) || err; else setError('nome','nomeError',false);
+  if (wpp.length < 10) err = setError('whatsapp','whatsappError',true) || err; else setError('whatsapp','whatsappError',false);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) err = setError('email','emailError',true) || err; else setError('email','emailError',false);
+  if (!validarCPF(cpf)) err = setError('cpf','cpfError',true) || err; else setError('cpf','cpfError',false);
+  return !err;
+}
+
+// ─── SUBMIT ─────────────────────────────────────────────────────────────────
+async function handleCheckout() {
+  if (!validate()) return;
+  const btn = document.getElementById('btnSubmit');
+  const banner = document.getElementById('errorBanner');
+  btn.disabled = true; btn.classList.add('loading'); banner.classList.remove('show');
+
+  const payload = {
+    nome:     document.getElementById('nome').value.trim(),
+    whatsapp: document.getElementById('whatsapp').value.replace(/\D/g,''),
+    email:    document.getElementById('email').value.trim(),
+    cpf:      document.getElementById('cpf').value.replace(/\D/g,'')
+  };
+
+  try {
+    const res = await fetch(N8N_WEBHOOK_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.paymentUrl) { window.location.href = data.paymentUrl; return; }
+    throw new Error(data.message || 'Erro');
+  } catch(e) {
+    banner.textContent = 'Ocorreu um erro ao processar. Por favor, tente novamente.';
+    banner.classList.add('show');
+    btn.disabled = false; btn.classList.remove('loading');
+  }
+}
+document.addEventListener('keydown', e => { if (e.key === 'Enter') handleCheckout(); });
+</script>
+</body>
+</html>
