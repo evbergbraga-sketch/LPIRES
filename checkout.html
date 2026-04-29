@@ -23,7 +23,7 @@ nav {
   display:flex; align-items:center; justify-content:space-between;
   padding:18px 32px; border-bottom:1px solid var(--border);
 }
-.logo { display:flex; align-items:center; gap:12px; }
+.logo { display:flex; align-items:center; gap:12px; text-decoration:none; }
 .logo-circle {
   width:40px; height:40px; border-radius:50%;
   background:var(--pink); border:1px solid var(--border);
@@ -43,10 +43,8 @@ main {
 @media(max-width:760px) {
   main { grid-template-columns:1fr; gap:24px; padding:24px 16px; }
   .summary { order:-1; position:static !important; }
-  .form-side { padding-right:0 !important; }
 }
 
-.form-side { padding-right:0; }
 .form-side h1 { font-family:var(--ff-serif); font-style:italic; font-size:2rem; font-weight:400; margin-bottom:8px; }
 .form-side h1 strong { font-style:normal; color:var(--accent); }
 .form-side p { color:var(--gray); font-size:14px; margin-bottom:36px; line-height:1.5; }
@@ -135,10 +133,10 @@ input.error { border-color:var(--error); }
 <body>
 
 <nav>
-  <div class="logo">
+  <a class="logo" href="index.html">
     <div class="logo-circle"><span>ires</span><span>EMB.</span></div>
     <div class="logo-name">ires <em>embaixadoras</em></div>
-  </div>
+  </a>
   <div class="secure-badge">🔒 Checkout seguro</div>
 </nav>
 
@@ -191,16 +189,16 @@ input.error { border-color:var(--error); }
     <div class="divider"></div>
     <div class="summary-line">
       <span>Valor original</span>
-      <span style="text-decoration:line-through;color:var(--gray)">R$97,00</span>
+      <span style="text-decoration:line-through;color:var(--gray)">R$197,00</span>
     </div>
     <div class="summary-line discount">
       <span>Desconto de lançamento</span>
-      <span>−R$67,10</span>
+      <span>−R$147,10</span>
     </div>
     <div class="divider"></div>
     <div class="summary-line total">
       <span>Total</span>
-      <span>R$29,90</span>
+      <span>R$49,90</span>
     </div>
     <div class="summary-features">
       <div class="sum-feat">Plataforma de pedidos completa</div>
@@ -225,10 +223,13 @@ input.error { border-color:var(--error); }
 </main>
 
 <script>
-// ─── CONFIGURAÇÃO — substitua pela URL real do seu n8n ───────────────────────
+// ─── CONFIGURAÇÃO ────────────────────────────────────────────────────────────
+// ⚠️  Substitua pela URL real do seu webhook n8n quando estiver pronto.
+// Enquanto não tiver o n8n configurado, o sistema irá redirecionar direto
+// para a página de cadastro de senha (fluxo alternativo abaixo).
 const N8N_WEBHOOK_URL = 'https://SEU_N8N/webhook/ires-checkout';
 
-// ─── MÁSCARAS ───────────────────────────────────────────────────────────────
+// ─── MÁSCARAS ────────────────────────────────────────────────────────────────
 document.getElementById('cpf').addEventListener('input', function(e) {
   let v = e.target.value.replace(/\D/g,'').substring(0,11);
   if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
@@ -243,7 +244,7 @@ document.getElementById('whatsapp').addEventListener('input', function(e) {
   e.target.value = v;
 });
 
-// ─── VALIDAÇÃO CPF ──────────────────────────────────────────────────────────
+// ─── VALIDAÇÃO CPF ───────────────────────────────────────────────────────────
 function validarCPF(cpf) {
   cpf = cpf.replace(/\D/g,'');
   if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
@@ -276,7 +277,7 @@ function validate() {
   return !err;
 }
 
-// ─── SUBMIT ─────────────────────────────────────────────────────────────────
+// ─── SUBMIT ──────────────────────────────────────────────────────────────────
 async function handleCheckout() {
   if (!validate()) return;
   const btn = document.getElementById('btnSubmit');
@@ -290,15 +291,27 @@ async function handleCheckout() {
     cpf:      document.getElementById('cpf').value.replace(/\D/g,'')
   };
 
+  // Guarda dados na sessão para uso pós-pagamento
+  sessionStorage.setItem('ires_checkout_data', JSON.stringify(payload));
+
   try {
     const res = await fetch(N8N_WEBHOOK_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify(payload)
     });
     const data = await res.json();
-    if (data.paymentUrl) { window.location.href = data.paymentUrl; return; }
+    if (data.paymentUrl) {
+      window.location.href = data.paymentUrl;
+      return;
+    }
     throw new Error(data.message || 'Erro');
   } catch(e) {
+    // ── FALLBACK: se o n8n ainda não estiver configurado, redireciona para cadastro ──
+    // Remova o bloco abaixo quando o n8n estiver ativo e funcionando.
+    if (N8N_WEBHOOK_URL.includes('SEU_N8N')) {
+      window.location.href = 'cadastro.html';
+      return;
+    }
     banner.textContent = 'Ocorreu um erro ao processar. Por favor, tente novamente.';
     banner.classList.add('show');
     btn.disabled = false; btn.classList.remove('loading');
