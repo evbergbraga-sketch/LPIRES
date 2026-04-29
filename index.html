@@ -52,7 +52,6 @@ body{font-family:var(--ff);background:var(--bg);color:var(--dark);font-size:16px
 @keyframes scrollX{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @keyframes countUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:14px 32px;background:rgba(253,248,243,.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
-/* ✅ CORRIGIDO: color:inherit evita azul padrão de link */
 .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit}
 .logo-orb{width:36px;height:36px;border-radius:50%;background:var(--bx);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
 .lo{font-size:13px;font-weight:800;color:#fff;letter-spacing:-.5px}
@@ -104,7 +103,6 @@ body{font-family:var(--ff);background:var(--bg);color:var(--dark);font-size:16px
 .car-item{width:200px;height:220px;border-radius:14px;overflow:hidden;flex-shrink:0;border:1px solid var(--border);background:#fff;box-shadow:0 2px 12px rgba(92,26,46,.06);transition:transform .3s,box-shadow .3s}
 .car-item:hover{transform:scale(1.03);box-shadow:0 8px 24px rgba(92,26,46,.12)}
 .car-item img{width:100%;height:100%;object-fit:cover}
-/* Banners: só aparecem no mobile */
 .mid-banner{display:none;width:100%;background:#1c0a12}
 .mid-banner img{display:block;width:100%;height:auto}
 .sec{padding:80px 24px}
@@ -217,7 +215,6 @@ footer{border-top:1px solid var(--border);background:var(--bg);text-align:center
 .tw-opts{display:flex;gap:6px;flex-wrap:wrap}
 .tw-opt{padding:5px 12px;border-radius:100px;border:1px solid var(--border);font-size:11px;cursor:pointer;background:var(--bg);color:var(--mid);transition:all .15s;font-family:var(--ff);font-weight:600}
 .tw-opt:hover,.tw-opt.on{background:var(--bx);color:#fff;border-color:var(--bx)}
-/* ── MOBILE HERO (controlado pelo React via useIsMobile) ── */
 @media(max-width:700px){
   .mid-banner{display:block}
   .nav{padding:12px 16px}
@@ -293,14 +290,11 @@ footer{border-top:1px solid var(--border);background:var(--bg);text-align:center
     <div class="logo-orb"><span class="lo">ires</span><span class="ls">EMB.</span></div>
     <span class="logo-name">ires <em>embaixadoras</em></span>
   </a>
-  <!-- ✅ CORRIGIDO -->
   <a href="checkout.html" class="btn btn-bx">Quero Entrar →</a>
 </nav>
 
-
 <div class="float-bar" id="floatBar">
   <div class="float-bar-text">🛡 <strong>7 dias de garantia</strong> · Acesso imediato por R$49,90</div>
-  <!-- ✅ CORRIGIDO -->
   <a href="checkout.html" class="float-bar-cta">Garantir Vaga →</a>
 </div>
 
@@ -392,10 +386,12 @@ function useIsMobile(breakpoint = 700) {
   return mobile;
 }
 
-
+// ✅ CORRIGIDO: função useCounter estava com a declaração apagada
+function useCounter(target, suffix = '', prefix = '') {
   const [val, setVal] = useState(0);
   const [started, setStarted] = useState(false);
   const ref = useRef(null);
+  const duration = 1800;
   useEffect(() => {
     const obs = new IntersectionObserver(([e]) => {
       if (e.isIntersecting && !started) {
@@ -428,11 +424,15 @@ function AnimStat({ prefix, target, suffix, label }) {
 
 function VagasCounter() {
   const [vagas] = useState(() => {
-    const stored = localStorage.getItem('ires_vagas');
-    if (stored) return parseInt(stored);
-    const v = Math.floor(Math.random() * 4) + 5;
-    localStorage.setItem('ires_vagas', v);
-    return v;
+    try {
+      const stored = localStorage.getItem('ires_vagas');
+      if (stored) return parseInt(stored);
+      const v = Math.floor(Math.random() * 4) + 5;
+      localStorage.setItem('ires_vagas', v);
+      return v;
+    } catch(e) {
+      return Math.floor(Math.random() * 4) + 5;
+    }
   });
   return (
     <div className="vagas-count">
@@ -511,7 +511,6 @@ function App() {
   const cta = CTAS[tweaks.cta];
 
   return (<>
-    {/* HERO — desktop mostra hero completo, mobile mostra banner + CTA imediato */}
     {isMobile ? (
       <div style={{display:'flex', flexDirection:'column', background:'var(--bx-dk)'}}>
         <img src="uploads/b1.png" alt="IRES Embaixadoras" loading="eager" style={{display:'block', width:'100%', height:'auto'}}/>
@@ -553,26 +552,22 @@ function App() {
       </section>
     )}
 
-    {/* URGENCY TOP */}
     <div className="urgency-top" data-reveal>
       <div className="urg-dot"/>
       <div className="urg-text">Vagas limitadas por período — <span>quantidade controlada para garantir qualidade de suporte</span></div>
       <VagasCounter/>
     </div>
 
-    {/* STRIP */}
     <div className="strip" data-reveal>
       {["Treinamento completo","Produtos no atacado","Criativos prontos","Plano de carreira","Comunidade ativa","Garantia de 7 dias"].map(s => (
         <div key={s} className="strip-item"><span className="strip-ck">✓</span>{s}</div>
       ))}
     </div>
 
-    {/* MID BANNER b2 */}
     <div className="mid-banner">
       <img src={window.__resources?.bannerB2 || "uploads/b2.png"} alt="Muitas mulheres desistem antes de começar" loading="lazy"/>
     </div>
 
-    {/* PAIN */}
     <section className="sec">
       <div className="c">
         <div className="tag" data-reveal>Você se identifica?</div>
@@ -588,10 +583,8 @@ function App() {
       </div>
     </section>
 
-    {/* PRODUCT CAROUSEL */}
     <ProductCarousel/>
 
-    {/* WHAT YOU GET */}
     <section className="sec sec-cream">
       <div className="cw">
         <div className="tag" data-reveal>O que você recebe</div>
@@ -608,7 +601,6 @@ function App() {
       </div>
     </section>
 
-    {/* CAREER */}
     <section className="sec sec-dark">
       <div className="cw">
         <div className="tag tag-lt" data-reveal>Plano de Carreira</div>
@@ -626,12 +618,10 @@ function App() {
       </div>
     </section>
 
-    {/* MID BANNER b3 */}
     <div className="mid-banner">
       <img src={window.__resources?.bannerB3 || "uploads/b3.png"} alt="Banner Viviane" loading="lazy"/>
     </div>
 
-    {/* BRAND / VIVIANE */}
     <section className="brand-section">
       <div className="brand-grid-bg"/>
       <div className="brand-glow"/>
@@ -669,7 +659,6 @@ function App() {
       </div>
     </section>
 
-    {/* TESTIMONIALS */}
     <section className="sec">
       <div className="cw">
         <div className="tag" data-reveal>Resultados reais</div>
@@ -689,7 +678,6 @@ function App() {
       </div>
     </section>
 
-    {/* OFFER */}
     <section className="sec sec-cream" id="oferta">
       <div className="c">
         <div className="tag" style={{textAlign:'center'}} data-reveal>A Oferta</div>
@@ -722,7 +710,6 @@ function App() {
               <div className="offer-price"><sup>R$</sup>49<sup style={{fontSize:28}}>,90</sup></div>
               <div className="offer-mo">pagamento único · sem mensalidade · acesso imediato</div>
             </div>
-            {/* ✅ CORRIGIDO */}
             <a href="checkout.html" className="btn btn-bx-lg" style={{display:'block',textAlign:'center'}}>{cta}</a>
             <div style={{textAlign:'center',marginTop:12,fontSize:12,color:'var(--muted)'}}>🛡 Garantia de 7 dias · Reembolso sem perguntas</div>
           </div>
@@ -730,7 +717,6 @@ function App() {
       </div>
     </section>
 
-    {/* OBJECTIONS */}
     <section className="sec">
       <div className="cw">
         <div className="tag" data-reveal>Suas dúvidas</div>
@@ -746,7 +732,6 @@ function App() {
       </div>
     </section>
 
-    {/* GUARANTEE */}
     <section className="sec sec-cream">
       <div className="c">
         <div className="guar-inner" data-reveal-scale>
@@ -758,7 +743,6 @@ function App() {
       </div>
     </section>
 
-    {/* FAQ */}
     <section className="sec">
       <div className="c">
         <div className="tag" data-reveal>FAQ</div>
@@ -767,13 +751,11 @@ function App() {
       </div>
     </section>
 
-    {/* FINAL CTA */}
     <section className="final">
       <div className="c">
         <h2 className="final-h" data-reveal>Você pode continuar tentando sozinha…<br/>ou ter um <em>método que funciona</em></h2>
         <p className="final-sub" data-reveal data-d="1">A IRES Embaixadoras é o começo que faltava.</p>
         <div data-reveal data-d="2">
-          {/* ✅ CORRIGIDO */}
           <a href="checkout.html" className="btn btn-gold" style={{fontSize:17,padding:'20px 52px'}}>{cta}</a>
         </div>
         <p className="ps" data-reveal data-d="3">PS: Você não precisa ter tudo perfeito… mas precisa de um método. Começar com a estrutura certa muda tudo.</p>
@@ -782,7 +764,6 @@ function App() {
 
     <footer>© 2026 IRES Embaixadoras · Todos os direitos reservados</footer>
 
-    {/* TWEAKS */}
     <div className={`tw-panel ${twVis ? 'vis' : ''}`}>
       <div className="tw-head">Tweaks</div>
       <div className="tw-row">
