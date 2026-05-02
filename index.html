@@ -377,8 +377,10 @@ const FAQS = [
 
 // ── Mobile detection ──
 function useIsMobile(breakpoint = 700) {
-  const [mobile, setMobile] = useState(() => window.innerWidth <= breakpoint);
+  const [mobile, setMobile] = useState(false);
   useEffect(() => {
+    // Setar imediatamente na montagem e em resize
+    setMobile(window.innerWidth <= breakpoint);
     const handler = () => setMobile(window.innerWidth <= breakpoint);
     window.addEventListener('resize', handler, { passive: true });
     return () => window.removeEventListener('resize', handler);
