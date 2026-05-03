@@ -1,0 +1,457 @@
+{
+  "name": "IRES LP — Checkout + Pagamento",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ires-lp-checkout",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Access-Control-Allow-Origin", "value": "*" },
+              { "name": "Access-Control-Allow-Headers", "value": "Content-Type" }
+            ]
+          }
+        }
+      },
+      "id": "262e701d-d6f0-4ff2-a8d5-041a29b4132d",
+      "name": "Webhook Checkout",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-496, -528],
+      "webhookId": "ires-lp-checkout"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $input.first().json.body || $input.first().json;\nif (!b.nome || !b.email || !b.cpf || !b.whatsapp) {\n  throw new Error('Campos obrigatórios ausentes');\n}\nconst cpf = b.cpf.replace(/\\D/g, '');\nreturn [{\n  json: {\n    nome:          b.nome.trim(),\n    email:         b.email.trim().toLowerCase(),\n    cpf,\n    whatsapp:      b.whatsapp.replace(/\\D/g, ''),\n    paymentMethod: b.paymentMethod || 'pix'\n  }\n}];"
+      },
+      "id": "7c5eea0c-09f0-4eb5-83ea-1d3f797b9357",
+      "name": "Prepara Dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-240, -560]
+    },
+    {
+      "parameters": {
+        "tableId": "lp_purchases",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "nome",     "fieldValue": "={{ $json.nome }}" },
+            { "fieldId": "email",    "fieldValue": "={{ $json.email }}" },
+            { "fieldId": "cpf",      "fieldValue": "={{ $json.cpf }}" },
+            { "fieldId": "whatsapp", "fieldValue": "={{ $json.whatsapp }}" },
+            { "fieldId": "status",   "fieldValue": "pending" }
+          ]
+        }
+      },
+      "id": "22512e99-17e1-424f-96bc-4fd090b48482",
+      "name": "Salva Lead Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-16, -544],
+      "credentials": {
+        "supabaseApi": { "id": "zA6X27dlVZOZuelG", "name": "Ires embaixadoras" }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "additionalFilters": { "cpfCnpj": "={{ $('Prepara Dados').item.json.cpf }}" }
+      },
+      "type": "@asaasbr/n8n-nodes-asaas.asaas",
+      "typeVersion": 1,
+      "position": [192, -560],
+      "id": "ebd099ca-a507-4541-835c-a3a6c7a42f4e",
+      "name": "Busca Cliente Asaas",
+      "credentials": { "asaasApi": { "id": "smDauiwhomXtdsJt", "name": "Asaas Berg" } }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "strict", "version": 3 },
+          "conditions": [
+            {
+              "id": "tem-cliente",
+              "leftValue": "={{ $json.data[0] }}",
+              "rightValue": "={{ $json.data[0] }}",
+              "operator": { "type": "object", "operation": "exists", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [400, -544],
+      "id": "0324780f-b6c4-458d-8557-9a6a9a9954dc",
+      "name": "Já é cliente?"
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Prepara Dados').item.json.nome }}",
+        "cpfCnpj": "={{ $('Prepara Dados').item.json.cpf }}",
+        "email": "={{ $('Prepara Dados').item.json.email }}",
+        "additionalFields": {
+          "mobilePhone": "={{ $('Prepara Dados').item.json.whatsapp }}",
+          "notificationDisabled": true,
+          "externalReference": "INSCRIÇÃO NA PLATAFORMA IRES REVENDEDORA"
+        }
+      },
+      "id": "807ecb2b-5ac9-486d-aed6-db58ee72663c",
+      "name": "Cria Cliente Asaas",
+      "type": "@asaasbr/n8n-nodes-asaas.asaas",
+      "typeVersion": 1,
+      "position": [592, -448],
+      "credentials": { "asaasApi": { "id": "smDauiwhomXtdsJt", "name": "Asaas Berg" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Define se é PIX ou Cartão e monta a cobrança corretamente\nconst dados = $('Prepara Dados').first().json;\nconst buscou = $('Busca Cliente Asaas').first().json;\nconst criou = (() => { try { return $('Cria Cliente Asaas').first().json; } catch(e) { return null; } })();\nconst customerId = (buscou.data && buscou.data[0]) ? buscou.data[0].id : (criou ? criou.id : null);\nif (!customerId) throw new Error('Customer ID não encontrado');\nconst isPix = dados.paymentMethod !== 'cartao';\nreturn [{\n  json: {\n    customerId,\n    cpf: dados.cpf,\n    billingType:       isPix ? 'PIX' : 'CREDIT_CARD',\n    value:             49.90,\n    installmentCount:  isPix ? null : 10,\n    installmentValue:  isPix ? null : 4.90,\n    isPix\n  }\n}];"
+      },
+      "id": "resolve-cobranca",
+      "name": "Resolve Cobrança",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, -544]
+    },
+    {
+      "parameters": {
+        "resource": "payment",
+        "customer": "={{ $json.customerId }}",
+        "billingType": "={{ $json.billingType }}",
+        "value": "={{ $json.value }}",
+        "dueDate": "={{ new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0] }}",
+        "additionalFields": {
+          "description": "Acesso IRES Embaixadoras — Pagamento Único",
+          "externalReference": "={{ $json.cpf }}",
+          "installmentCount": "={{ $json.installmentCount ?? undefined }}",
+          "installmentValue": "={{ $json.installmentValue ?? undefined }}"
+        }
+      },
+      "id": "d22af344-7784-4e9b-a1b4-35bf5ace86f7",
+      "name": "Cria Cobrança Asaas",
+      "type": "@asaasbr/n8n-nodes-asaas.asaas",
+      "typeVersion": 1,
+      "position": [900, -544],
+      "credentials": { "asaasApi": { "id": "smDauiwhomXtdsJt", "name": "Asaas Berg" } }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "lp_purchases",
+        "filters": {
+          "conditions": [{ "keyName": "cpf", "condition": "eq", "keyValue": "={{ $('Prepara Dados').item.json.cpf }}" }]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "payment_ref",    "fieldValue": "={{ $('Cria Cobrança Asaas').item.json.id }}" },
+            { "fieldId": "payment_url",    "fieldValue": "={{ $('Cria Cobrança Asaas').item.json.invoiceUrl }}" },
+            { "fieldId": "pix_copia_cola", "fieldValue": "={{ $('Cria Cobrança Asaas').item.json.pixTransaction?.payload ?? '' }}" },
+            { "fieldId": "pix_qrcode",     "fieldValue": "={{ $('Cria Cobrança Asaas').item.json.pixTransaction?.encodedImage ?? '' }}" }
+          ]
+        }
+      },
+      "id": "a5e66060-1197-43b8-8fc9-bb3d33061ddf",
+      "name": "Atualiza Lead com Pagamento",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1100, -544],
+      "credentials": { "supabaseApi": { "id": "zA6X27dlVZOZuelG", "name": "Ires embaixadoras" } }
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "ruahsystems",
+        "remoteJid": "=55{{ $('Prepara Dados').item.json.whatsapp }}@s.whatsapp.net",
+        "messageText": "=Olá, {{ $('Prepara Dados').item.json.nome.split(' ')[0] }}! 🌹\n\nQue alegria ter você aqui! Seu pedido foi recebido com sucesso.\n\n*📋 Resumo do pedido:*\n- Produto: IRES Embaixadoras\n- Valor: R$ 49,90\n- Vencimento: amanhã\n\n*💸 Pague agora pelo link abaixo:*\n{{ $('Cria Cobrança Asaas').item.json.invoiceUrl }}\n\nAssim que o pagamento for confirmado, você recebe seu acesso completo à plataforma. ✨\n\nQualquer dúvida, é só responder aqui. Estamos torcendo por você! 💛\n\n_Equipe IRES Embaixadoras_",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [1168, -688],
+      "id": "09de8efb-da8a-40b9-9af2-5e6b16056585",
+      "name": "Enviar texto",
+      "credentials": { "evolutionApi": { "id": "htQCrZKJ3TAi2Scp", "name": "RuahSystems" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"ok\": true,\n  \"paymentUrl\": \"{{ $('Cria Cobrança Asaas').item.json.invoiceUrl }}\",\n  \"pixCopiaECola\": \"{{ $('Cria Cobrança Asaas').item.json.pixTransaction?.payload ?? '' }}\",\n  \"pixQrCode\": \"{{ $('Cria Cobrança Asaas').item.json.pixTransaction?.encodedImage ?? '' }}\",\n  \"valor\": {{ $('Cria Cobrança Asaas').item.json.value }}\n}",
+        "options": {
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "13378d96-a003-4b85-a6fd-62ea89b6dcaf",
+      "name": "Resposta Sucesso",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1300, -544]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ires-lp-webhook-asaas",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "8010d65c-0192-4187-879c-bfb76a5f453b",
+      "name": "Webhook Asaas",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-784, 944],
+      "webhookId": "ires-lp-webhook-asaas"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "pagamento-recebido",
+              "leftValue": "={{ $json.body?.event ?? $json.event }}",
+              "rightValue": "PAYMENT_RECEIVED",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3f166822-fbf4-451f-80b6-9dca4602ea5c",
+      "name": "É pagamento confirmado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-592, 944]
+    },
+    {
+      "parameters": {
+        "url": "=https://cqhcbbrpxytpybgnpxys.supabase.co/rest/v1/lp_purchases?cpf=eq.{{ ($json.body?.payment ?? $json.payment).externalReference }}&select=*",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_KEY}}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "45e7d6fa-6c52-4854-8fec-9ac06ba27cdc",
+      "name": "Busca Lead no Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-384, 848]
+    },
+    {
+      "parameters": {
+        "jsCode": "const leads = $input.first().json;\nif (!leads || !Array.isArray(leads) || leads.length === 0) {\n  const cpf = ($('Webhook Asaas').first().json.body?.payment ?? $('Webhook Asaas').first().json.payment).externalReference;\n  throw new Error('Lead não encontrado para CPF: ' + cpf);\n}\nreturn [{ json: leads[0] }];"
+      },
+      "id": "fbaa31e3-01f3-48a8-8c16-d5289fd0780d",
+      "name": "Valida Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-192, 848]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://cqhcbbrpxytpybgnpxys.supabase.co/rest/v1/lp_purchases?cpf=eq.{{ $json.cpf }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"status\": \"paid\" }",
+        "options": {}
+      },
+      "id": "8ef27e30-d352-4e87-96f0-e5c3dd003bd4",
+      "name": "Marca como Pago",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [16, 848]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $('Valida Lead').first().json;\nconst cadastroUrl = 'https://evbergbraga-sketch.github.io/LPIRES/cadastro.html';\nconst wpp = '55' + lead.whatsapp.replace(/\\D/g, '') + '@s.whatsapp.net';\nconst cpfFormatado = lead.cpf.replace(/(\\d{3})(\\d{3})(\\d{3})(\\d{2})/, '$1.$2.$3-$4');\nconst msg = `Olá, *${lead.nome.split(' ')[0]}*! 🎉\\n\\nSeu pagamento foi confirmado!\\n\\nAgora é só criar sua senha e acessar a plataforma IRES Embaixadoras:\\n\\n👉 ${cadastroUrl}\\n\\nInforme o CPF *${cpfFormatado}* para liberar seu acesso.\\n\\nBem-vinda à família IRES! 🌸\\n\\n_IRES Embaixadoras_`;\nreturn [{ json: { wpp, msg, lead, cadastroUrl } }];"
+      },
+      "id": "cd7f173c-365e-476d-a5c1-59638539a374",
+      "name": "Monta Mensagem",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [224, 848]
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "ruahsystems",
+        "remoteJid": "={{ $json.wpp }}",
+        "messageText": "={{ $json.msg }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [416, 736],
+      "id": "9749ac5a-3ffb-42a1-972a-ae41a12c88d4",
+      "name": "Envia WhatsApp",
+      "credentials": { "evolutionApi": { "id": "htQCrZKJ3TAi2Scp", "name": "RuahSystems" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://cqhcbbrpxytpybgnpxys.supabase.co/auth/v1/admin/users",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"email\": \"{{ $('Valida Lead').item.json.email }}\",\n  \"email_confirm\": true,\n  \"user_metadata\": {\n    \"full_name\": \"{{ $('Valida Lead').item.json.nome }}\",\n    \"phone\": \"{{ $('Valida Lead').item.json.whatsapp }}\"\n  }\n}",
+        "options": {}
+      },
+      "id": "1e3d405a-7890-4ad8-997d-3f6a3b462621",
+      "name": "Cria Usuário Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [416, 944]
+    },
+    {
+      "parameters": {
+        "jsCode": "const user = $input.first().json;\nconst lead = $('Valida Lead').first().json;\nif (!user.id) throw new Error('Usuário não criado: ' + JSON.stringify(user));\nreturn [{ json: { userId: user.id, lead } }];"
+      },
+      "id": "d4be0474-3f92-4486-8642-a0d3a21abc69",
+      "name": "Valida Usuário Criado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [624, 944]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://cqhcbbrpxytpybgnpxys.supabase.co/rest/v1/profiles",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "resolution=merge-duplicates,return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"id\": \"{{ $json.userId }}\",\n  \"full_name\": \"{{ $json.lead.nome }}\",\n  \"email\": \"{{ $json.lead.email }}\",\n  \"phone\": \"{{ $json.lead.whatsapp }}\",\n  \"role\": \"embaixadora\",\n  \"status\": \"active\",\n  \"nivel\": \"bronze\"\n}",
+        "options": {}
+      },
+      "id": "0392ac0f-3080-4d96-902d-6eb1362ac5cc",
+      "name": "Cria Profile Embaixadora",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [816, 944]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://cqhcbbrpxytpybgnpxys.supabase.co/rest/v1/lp_purchases?cpf=eq.{{ $('Valida Lead').item.json.cpf }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\": \"activated\",\n  \"activated_at\": \"{{ new Date().toISOString() }}\"\n}",
+        "options": {}
+      },
+      "id": "336f4feb-0dc1-422d-8915-e3d9a3762a86",
+      "name": "Marca como Ativado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1024, 944]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true }",
+        "options": {}
+      },
+      "id": "802b6bb9-63a5-409c-9689-4917cde7a0f0",
+      "name": "Resposta OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1216, 944]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true, \"skipped\": true }",
+        "options": {}
+      },
+      "id": "8647aef0-5a18-4845-885f-e8ace1a07e12",
+      "name": "Ignora Evento",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [-384, 1136]
+    }
+  ],
+  "connections": {
+    "Webhook Checkout":          { "main": [[{ "node": "Prepara Dados",             "type": "main", "index": 0 }]] },
+    "Prepara Dados":             { "main": [[{ "node": "Salva Lead Supabase",        "type": "main", "index": 0 }]] },
+    "Salva Lead Supabase":       { "main": [[{ "node": "Busca Cliente Asaas",        "type": "main", "index": 0 }]] },
+    "Busca Cliente Asaas":       { "main": [[{ "node": "Já é cliente?",              "type": "main", "index": 0 }]] },
+    "Já é cliente?": {
+      "main": [
+        [{ "node": "Resolve Cobrança",  "type": "main", "index": 0 }],
+        [{ "node": "Cria Cliente Asaas","type": "main", "index": 0 }]
+      ]
+    },
+    "Cria Cliente Asaas":        { "main": [[{ "node": "Resolve Cobrança",          "type": "main", "index": 0 }]] },
+    "Resolve Cobrança":          { "main": [[{ "node": "Cria Cobrança Asaas",        "type": "main", "index": 0 }]] },
+    "Cria Cobrança Asaas":       { "main": [[{ "node": "Atualiza Lead com Pagamento","type": "main", "index": 0 }]] },
+    "Atualiza Lead com Pagamento": {
+      "main": [[
+        { "node": "Resposta Sucesso", "type": "main", "index": 0 },
+        { "node": "Enviar texto",     "type": "main", "index": 0 }
+      ]]
+    },
+    "Webhook Asaas":             { "main": [[{ "node": "É pagamento confirmado?",   "type": "main", "index": 0 }]] },
+    "É pagamento confirmado?": {
+      "main": [
+        [{ "node": "Busca Lead no Supabase", "type": "main", "index": 0 }],
+        [{ "node": "Ignora Evento",          "type": "main", "index": 0 }]
+      ]
+    },
+    "Busca Lead no Supabase":    { "main": [[{ "node": "Valida Lead",               "type": "main", "index": 0 }]] },
+    "Valida Lead":               { "main": [[{ "node": "Marca como Pago",           "type": "main", "index": 0 }]] },
+    "Marca como Pago":           { "main": [[{ "node": "Monta Mensagem",            "type": "main", "index": 0 }]] },
+    "Monta Mensagem": {
+      "main": [[
+        { "node": "Envia WhatsApp",       "type": "main", "index": 0 },
+        { "node": "Cria Usuário Supabase","type": "main", "index": 0 }
+      ]]
+    },
+    "Cria Usuário Supabase":     { "main": [[{ "node": "Valida Usuário Criado",     "type": "main", "index": 0 }]] },
+    "Valida Usuário Criado":     { "main": [[{ "node": "Cria Profile Embaixadora",  "type": "main", "index": 0 }]] },
+    "Cria Profile Embaixadora":  { "main": [[{ "node": "Marca como Ativado",        "type": "main", "index": 0 }]] },
+    "Marca como Ativado":        { "main": [[{ "node": "Resposta OK",               "type": "main", "index": 0 }]] }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "708660954cede95b514e33de24ab32e159ce99c9f51be0e449bca3baf80dc018"
+  }
+}
