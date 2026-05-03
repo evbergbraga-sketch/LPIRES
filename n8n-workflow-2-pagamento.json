@@ -1,0 +1,250 @@
+{
+  "name": "IRES LP — Confirmação de Pagamento",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ires-lp-webhook-asaas",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-asaas",
+      "name": "Webhook Asaas",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-1400, 400],
+      "webhookId": "ires-lp-webhook-asaas"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "pagamento-confirmado",
+              "leftValue": "={{ $json.body?.event ?? $json.event }}",
+              "rightValue": "PAYMENT_RECEIVED",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "eh-pagamento",
+      "name": "É PAYMENT_RECEIVED?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-1200, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst payment = body.payment;\nif (!payment) throw new Error('Payload inválido — sem payment');\n// externalReference = paymentId (ex: IRES-12345678-ABC123)\nconst ref = payment.externalReference || '';\n// Extrai CPF da referência ou usa customer.cpfCnpj\nconst cpf = ref.includes('IRES-') ? ref.split('-')[1] : (payment.customer?.cpfCnpj || '').replace(/\\D/g,'');\nreturn [{ json: { paymentId: ref, asaasId: payment.id, cpf, value: payment.value } }];"
+      },
+      "id": "extrai-dados",
+      "name": "Extrai Dados do Pagamento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1000, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://cqhcbbrpxytpybgnpxys.supabase.co/rest/v1/lp_purchases?payment_ref=eq.{{ $json.paymentId }}&select=*",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_KEY}}" }
+          ]
+        }
+      },
+      "id": "busca-lead",
+      "name": "Busca Lead no Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-800, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const leads = $input.first().json;\nif (!leads || !Array.isArray(leads) || leads.length === 0) {\n  throw new Error('Lead não encontrado para ref: ' + $('Extrai Dados do Pagamento').first().json.paymentId);\n}\nreturn [{ json: leads[0] }];"
+      },
+      "id": "valida-lead",
+      "name": "Valida Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-600, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://cqhcbbrpxytpybgnpxys.supabase.co/rest/v1/lp_purchases?id=eq.{{ $json.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"status\": \"paid\" }"
+      },
+      "id": "marca-pago",
+      "name": "Marca como Pago",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-400, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $('Valida Lead').first().json;\nconst cadastroUrl = 'https://evbergbraga-sketch.github.io/LPIRES/cadastro.html';\nconst cpfFormatado = lead.cpf.replace(/(\\d{3})(\\d{3})(\\d{3})(\\d{2})/, '$1.$2.$3-$4');\nconst primeiroNome = lead.nome.split(' ')[0];\nconst wpp = '55' + lead.whatsapp.replace(/\\D/g,'') + '@s.whatsapp.net';\nconst msgWpp = `Olá, *${primeiroNome}*! 🎉\\n\\nSeu pagamento foi confirmado com sucesso!\\n\\nAgora é só criar sua senha e acessar a plataforma IRES Embaixadoras:\\n\\n👉 ${cadastroUrl}\\n\\nInforme o CPF *${cpfFormatado}* no cadastro para liberar seu acesso.\\n\\nBem-vinda à família IRES! 🌸\\n\\n_IRES Embaixadoras_`;\nreturn [{ json: { wpp, msgWpp, lead, cadastroUrl, primeiroNome } }];"
+      },
+      "id": "monta-msg",
+      "name": "Monta Mensagem",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-200, 300]
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "ruahsystems",
+        "remoteJid": "={{ $json.wpp }}",
+        "messageText": "={{ $json.msgWpp }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [0, 200],
+      "id": "envia-wpp",
+      "name": "Envia WhatsApp",
+      "credentials": {
+        "evolutionApi": { "id": "htQCrZKJ3TAi2Scp", "name": "RuahSystems" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://cqhcbbrpxytpybgnpxys.supabase.co/auth/v1/admin/users",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"email\": \"{{ $('Valida Lead').item.json.email }}\",\n  \"email_confirm\": true,\n  \"user_metadata\": {\n    \"full_name\": \"{{ $('Valida Lead').item.json.nome }}\",\n    \"phone\": \"{{ $('Valida Lead').item.json.whatsapp }}\"\n  }\n}"
+      },
+      "id": "cria-usuario",
+      "name": "Cria Usuário Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [0, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const user = $input.first().json;\nconst lead = $('Valida Lead').first().json;\nif (!user.id) {\n  // Usuário já existe — tenta buscar pelo email\n  console.log('Usuário já existe ou erro:', JSON.stringify(user));\n}\nreturn [{ json: { userId: user.id || user.user?.id, lead } }];"
+      },
+      "id": "resolve-user",
+      "name": "Resolve User ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [200, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://cqhcbbrpxytpybgnpxys.supabase.co/rest/v1/profiles",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "resolution=merge-duplicates,return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"id\": \"{{ $json.userId }}\",\n  \"full_name\": \"{{ $json.lead.nome }}\",\n  \"email\": \"{{ $json.lead.email }}\",\n  \"phone\": \"{{ $json.lead.whatsapp }}\",\n  \"role\": \"embaixadora\",\n  \"status\": \"active\",\n  \"nivel\": \"bronze\"\n}"
+      },
+      "id": "cria-profile",
+      "name": "Cria Profile Embaixadora",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [400, 400]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://cqhcbbrpxytpybgnpxys.supabase.co/rest/v1/lp_purchases?id=eq.{{ $('Valida Lead').item.json.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\": \"activated\",\n  \"activated_at\": \"{{ new Date().toISOString() }}\"\n}"
+      },
+      "id": "marca-ativado",
+      "name": "Marca como Ativado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [600, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true }",
+        "options": {}
+      },
+      "id": "resposta-ok",
+      "name": "Resposta OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [800, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true, \"skipped\": true }",
+        "options": {}
+      },
+      "id": "resposta-skip",
+      "name": "Ignora Evento",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [-1000, 600]
+    }
+  ],
+  "connections": {
+    "Webhook Asaas":               { "main": [[{ "node": "É PAYMENT_RECEIVED?",       "type": "main", "index": 0 }]] },
+    "É PAYMENT_RECEIVED?": {
+      "main": [
+        [{ "node": "Extrai Dados do Pagamento", "type": "main", "index": 0 }],
+        [{ "node": "Ignora Evento",             "type": "main", "index": 0 }]
+      ]
+    },
+    "Extrai Dados do Pagamento":   { "main": [[{ "node": "Busca Lead no Supabase", "type": "main", "index": 0 }]] },
+    "Busca Lead no Supabase":      { "main": [[{ "node": "Valida Lead",            "type": "main", "index": 0 }]] },
+    "Valida Lead":                 { "main": [[{ "node": "Marca como Pago",        "type": "main", "index": 0 }]] },
+    "Marca como Pago":             { "main": [[{ "node": "Monta Mensagem",         "type": "main", "index": 0 }]] },
+    "Monta Mensagem": {
+      "main": [[
+        { "node": "Envia WhatsApp",        "type": "main", "index": 0 },
+        { "node": "Cria Usuário Supabase", "type": "main", "index": 0 }
+      ]]
+    },
+    "Cria Usuário Supabase":       { "main": [[{ "node": "Resolve User ID",          "type": "main", "index": 0 }]] },
+    "Resolve User ID":             { "main": [[{ "node": "Cria Profile Embaixadora", "type": "main", "index": 0 }]] },
+    "Cria Profile Embaixadora":    { "main": [[{ "node": "Marca como Ativado",        "type": "main", "index": 0 }]] },
+    "Marca como Ativado":          { "main": [[{ "node": "Resposta OK",               "type": "main", "index": 0 }]] }
+  }
+}

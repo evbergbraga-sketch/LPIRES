@@ -171,27 +171,21 @@ async function verificarCpf() {
 
   btn.disabled = true; btn.classList.add('loading'); msg.textContent = '';
 
-  const { data, error } = await supabase.rpc('verificar_cpf_pago', { cpf_input: cpfRaw });
+  const { data, error } = await supabase.rpc('verificar_cpf_pago', { p_cpf: cpfRaw });
 
   btn.disabled = false; btn.classList.remove('loading');
 
-  if (error || !data || data.length === 0) {
-    msg.textContent = 'CPF não encontrado. Verifique se o pagamento foi confirmado.';
+  if (error || !data) {
+    msg.textContent = 'Erro ao verificar CPF. Tente novamente.';
     return;
   }
 
-  const emb = data[0];
-
-  if (!emb.pago) {
-    msg.textContent = 'Pagamento ainda não confirmado. Aguarde alguns minutos e tente novamente.';
-    return;
-  }
-  if (emb.user_id) {
-    msg.textContent = 'Conta já criada para este CPF. Acesse a plataforma normalmente.';
+  if (!data.ok) {
+    msg.textContent = data.msg || 'CPF não encontrado ou pagamento pendente.';
     return;
   }
 
-  embaixadoraData = emb;
+  embaixadoraData = { ...data, cpf: cpfRaw };
   document.getElementById('stepCpf').classList.remove('active');
   document.getElementById('stepSenha').classList.add('active');
 }

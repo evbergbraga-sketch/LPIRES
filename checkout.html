@@ -247,9 +247,38 @@ input.error { border-color:var(--error); }
       <span>−R$147,10</span>
     </div>
     <div class="divider"></div>
-    <div class="summary-line total">
+
+    <!-- Seletor de forma de pagamento -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Forma de pagamento</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <label id="opt-pix" onclick="selecionarPagamento('pix')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,0.08);border:1.5px solid var(--accent);border-radius:10px;cursor:pointer;transition:all .2s;">
+          <div style="width:18px;height:18px;border-radius:50%;border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <div id="dot-pix" style="width:8px;height:8px;border-radius:50%;background:var(--accent);"></div>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:600;color:var(--light);">PIX</div>
+            <div style="font-size:12px;color:var(--gray);margin-top:1px;">R$49,90 à vista · Aprovação imediata</div>
+          </div>
+          <span style="font-size:13px;font-weight:700;color:var(--accent);">R$49,90</span>
+        </label>
+        <label id="opt-cartao" onclick="selecionarPagamento('cartao')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,0.04);border:1.5px solid rgba(196,154,122,0.2);border-radius:10px;cursor:pointer;transition:all .2s;">
+          <div style="width:18px;height:18px;border-radius:50%;border:2px solid rgba(196,154,122,0.4);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <div id="dot-cartao" style="width:8px;height:8px;border-radius:50%;background:transparent;"></div>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:600;color:var(--light);">Cartão de crédito</div>
+            <div style="font-size:12px;color:var(--gray);margin-top:1px;">10x de R$4,90 sem juros</div>
+          </div>
+          <span style="font-size:13px;font-weight:700;color:var(--accent);">10x R$4,90</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="summary-line total" id="total-line">
       <span>Total</span>
-      <span>R$49,90</span>
+      <span id="total-val">R$49,90</span>
     </div>
     <div class="summary-features">
       <div class="sum-feat">Plataforma de pedidos completa</div>
@@ -315,6 +344,23 @@ input.error { border-color:var(--error); }
 <script>
 // ─── CONFIGURAÇÃO ────────────────────────────────────────────────────────────
 const N8N_WEBHOOK_URL = 'https://webhook.ruahsystems.com.br/webhook/ires-lp-checkout';
+let _paymentMethod = 'pix'; // pix | cartao
+
+function selecionarPagamento(metodo) {
+  _paymentMethod = metodo;
+  const isPix = metodo === 'pix';
+  // Visual do PIX
+  document.getElementById('opt-pix').style.borderColor = isPix ? 'var(--accent)' : 'rgba(196,154,122,0.2)';
+  document.getElementById('opt-pix').style.background   = isPix ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)';
+  document.getElementById('dot-pix').style.background   = isPix ? 'var(--accent)' : 'transparent';
+  // Visual do Cartão
+  document.getElementById('opt-cartao').style.borderColor = !isPix ? 'var(--accent)' : 'rgba(196,154,122,0.2)';
+  document.getElementById('opt-cartao').style.background   = !isPix ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)';
+  document.getElementById('dot-cartao').style.background   = !isPix ? 'var(--accent)' : 'transparent';
+  // Total
+  document.getElementById('total-val').textContent = isPix ? 'R$49,90' : '10x R$4,90';
+  document.getElementById('btnSubmit').querySelector('.btn-text').textContent = isPix ? 'Gerar PIX →' : 'Pagar no Cartão →';
+}
 
 // ─── MÁSCARAS ────────────────────────────────────────────────────────────────
 document.getElementById('cpf').addEventListener('input', function(e) {
@@ -398,10 +444,12 @@ async function handleCheckout() {
   btn.disabled = true; btn.classList.add('loading'); banner.classList.remove('show');
 
   const payload = {
-    nome:     document.getElementById('nome').value.trim(),
-    whatsapp: document.getElementById('whatsapp').value.replace(/\D/g,''),
-    email:    document.getElementById('email').value.trim(),
-    cpf:      document.getElementById('cpf').value.replace(/\D/g,'')
+    nome:          document.getElementById('nome').value.trim(),
+    whatsapp:      document.getElementById('whatsapp').value.replace(/\D/g,''),
+    email:         document.getElementById('email').value.trim(),
+    cpf:           document.getElementById('cpf').value.replace(/\D/g,''),
+    paymentMethod: _paymentMethod,
+    descricao:     'IRES Embaixadoras — Acesso Plataforma'
   };
 
   sessionStorage.setItem('ires_checkout_data', JSON.stringify(payload));

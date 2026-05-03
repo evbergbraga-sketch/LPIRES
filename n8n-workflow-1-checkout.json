@@ -1,0 +1,211 @@
+{
+  "name": "IRES LP — Checkout",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ires-lp-checkout",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Access-Control-Allow-Origin", "value": "*" },
+              { "name": "Access-Control-Allow-Headers", "value": "Content-Type" }
+            ]
+          }
+        }
+      },
+      "id": "webhook-checkout",
+      "name": "Webhook Checkout",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-1600, 400],
+      "webhookId": "ires-lp-checkout"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $input.first().json.body || $input.first().json;\nif (!b.nome || !b.email || !b.cpf || !b.whatsapp) {\n  throw new Error('Campos obrigatórios ausentes');\n}\nconst cpf = b.cpf.replace(/\\D/g, '');\n// ID único para rastrear o pagamento\nconst paymentId = 'IRES-' + cpf.substring(0,6) + '-' + Date.now().toString(36).toUpperCase();\nreturn [{\n  json: {\n    nome:          b.nome.trim(),\n    email:         b.email.trim().toLowerCase(),\n    cpf,\n    whatsapp:      b.whatsapp.replace(/\\D/g, ''),\n    paymentMethod: b.paymentMethod || 'pix',\n    paymentId,\n    descricao:     'IRES Embaixadoras — Acesso Plataforma'\n  }\n}];"
+      },
+      "id": "prepara-dados",
+      "name": "Prepara Dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1400, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://cqhcbbrpxytpybgnpxys.supabase.co/rest/v1/lp_purchases",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "resolution=merge-duplicates,return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"nome\": \"{{ $('Prepara Dados').item.json.nome }}\",\n  \"email\": \"{{ $('Prepara Dados').item.json.email }}\",\n  \"cpf\": \"{{ $('Prepara Dados').item.json.cpf }}\",\n  \"whatsapp\": \"{{ $('Prepara Dados').item.json.whatsapp }}\",\n  \"status\": \"pending\",\n  \"payment_ref\": \"{{ $('Prepara Dados').item.json.paymentId }}\"\n}"
+      },
+      "id": "salva-lead",
+      "name": "Salva Lead Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-1200, 400]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "additionalFilters": {
+          "cpfCnpj": "={{ $('Prepara Dados').item.json.cpf }}"
+        }
+      },
+      "type": "@asaasbr/n8n-nodes-asaas.asaas",
+      "typeVersion": 1,
+      "position": [-1000, 300],
+      "id": "busca-cliente",
+      "name": "Busca Cliente Asaas",
+      "credentials": {
+        "asaasApi": { "id": "smDauiwhomXtdsJt", "name": "Asaas Berg" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "tem-cliente",
+              "leftValue": "={{ $json.data && $json.data[0] ? $json.data[0].id : '' }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "exists", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [-800, 300],
+      "id": "tem-cliente",
+      "name": "Já é cliente?"
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Prepara Dados').item.json.nome }}",
+        "cpfCnpj": "={{ $('Prepara Dados').item.json.cpf }}",
+        "email": "={{ $('Prepara Dados').item.json.email }}",
+        "additionalFields": {
+          "mobilePhone": "={{ $('Prepara Dados').item.json.whatsapp }}",
+          "notificationDisabled": true
+        }
+      },
+      "id": "cria-cliente",
+      "name": "Cria Cliente Asaas",
+      "type": "@asaasbr/n8n-nodes-asaas.asaas",
+      "typeVersion": 1,
+      "position": [-600, 500],
+      "credentials": {
+        "asaasApi": { "id": "smDauiwhomXtdsJt", "name": "Asaas Berg" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pega o customer ID correto (existente ou recém-criado)\nconst buscou = $('Já é cliente?').first().json;\nconst criou  = (() => { try { return $('Cria Cliente Asaas').first().json; } catch(e) { return null; } })();\nconst customerId = (buscou.data && buscou.data[0]) ? buscou.data[0].id : (criou ? criou.id : null);\nif (!customerId) throw new Error('Customer ID não encontrado');\nconst dados = $('Prepara Dados').first().json;\nreturn [{ json: { customerId, ...dados } }];"
+      },
+      "id": "resolve-customer",
+      "name": "Resolve Customer ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-400, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst isPix = d.paymentMethod !== 'cartao';\n// Monta payload da cobrança\nconst payload = {\n  customer:          d.customerId,\n  billingType:       isPix ? 'PIX' : 'CREDIT_CARD',\n  value:             49.90,\n  dueDate:           new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0],\n  description:       d.descricao,\n  externalReference: d.paymentId\n};\n// Cartão: parcelado 10x\nif (!isPix) {\n  payload.installmentCount = 10;\n  payload.installmentValue = 4.90;\n  payload.totalValue = 49.00; // 10 * 4.90\n}\nreturn [{ json: { payload, paymentMethod: d.paymentMethod, paymentId: d.paymentId, cpf: d.cpf } }];"
+      },
+      "id": "monta-cobranca",
+      "name": "Monta Cobrança",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-200, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.asaas.com/api/v3/payments",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "access_token", "value": "={{$env.ASAAS_API_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.payload) }}"
+      },
+      "id": "cria-cobranca",
+      "name": "Cria Cobrança Asaas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [0, 400]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://cqhcbbrpxytpybgnpxys.supabase.co/rest/v1/lp_purchases?cpf=eq.{{ $('Monta Cobrança').item.json.cpf }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"payment_ref\": \"{{ $('Cria Cobrança Asaas').item.json.id }}\",\n  \"payment_url\": \"{{ $('Cria Cobrança Asaas').item.json.invoiceUrl }}\",\n  \"pix_copia_cola\": \"{{ $('Cria Cobrança Asaas').item.json.pixTransaction?.payload ?? '' }}\",\n  \"pix_qrcode\": \"{{ $('Cria Cobrança Asaas').item.json.pixTransaction?.encodedImage ?? '' }}\"\n}"
+      },
+      "id": "atualiza-lead",
+      "name": "Atualiza Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [200, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"ok\": true,\n  \"paymentUrl\": \"{{ $('Cria Cobrança Asaas').item.json.invoiceUrl }}\",\n  \"pixCopiaECola\": \"{{ $('Cria Cobrança Asaas').item.json.pixTransaction?.payload ?? '' }}\",\n  \"pixQrCode\": \"{{ $('Cria Cobrança Asaas').item.json.pixTransaction?.encodedImage ?? '' }}\",\n  \"paymentMethod\": \"{{ $('Monta Cobrança').item.json.paymentMethod }}\",\n  \"valor\": 49.90\n}",
+        "options": {
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "id": "resposta-sucesso",
+      "name": "Resposta Sucesso",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [400, 400]
+    }
+  ],
+  "connections": {
+    "Webhook Checkout":    { "main": [[{ "node": "Prepara Dados",       "type": "main", "index": 0 }]] },
+    "Prepara Dados":       { "main": [[{ "node": "Salva Lead Supabase",  "type": "main", "index": 0 }]] },
+    "Salva Lead Supabase": { "main": [[{ "node": "Busca Cliente Asaas",  "type": "main", "index": 0 }]] },
+    "Busca Cliente Asaas": { "main": [[{ "node": "Já é cliente?",        "type": "main", "index": 0 }]] },
+    "Já é cliente?": {
+      "main": [
+        [{ "node": "Resolve Customer ID", "type": "main", "index": 0 }],
+        [{ "node": "Cria Cliente Asaas",  "type": "main", "index": 0 }]
+      ]
+    },
+    "Cria Cliente Asaas":  { "main": [[{ "node": "Resolve Customer ID", "type": "main", "index": 0 }]] },
+    "Resolve Customer ID": { "main": [[{ "node": "Monta Cobrança",       "type": "main", "index": 0 }]] },
+    "Monta Cobrança":      { "main": [[{ "node": "Cria Cobrança Asaas",  "type": "main", "index": 0 }]] },
+    "Cria Cobrança Asaas": { "main": [[{ "node": "Atualiza Lead",        "type": "main", "index": 0 }]] },
+    "Atualiza Lead":       { "main": [[{ "node": "Resposta Sucesso",     "type": "main", "index": 0 }]] }
+  }
+}
