@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><style>
+<style>
 :root {
   --bg: #3a0e1d; --bg2: #2d0a16; --pink: #5c1a2e;
   --accent: #c49a7a; --light: #fdf8f3; --gray: #b89088;
@@ -77,7 +77,6 @@ input.error { border-color:var(--error); }
 .msg.error { color:var(--error); }
 .msg.success { color:var(--success); }
 
-/* SUCESSO */
 .success-icon { font-size:52px; margin-bottom:20px; }
 .btn-plat {
   display:inline-flex; align-items:center; gap:8px;
@@ -107,7 +106,7 @@ input.error { border-color:var(--error); }
       <label for="cpfInput">CPF</label>
       <input type="text" id="cpfInput" placeholder="000.000.000-00" maxlength="14">
     </div>
-    <button class="btn" id="btnCpf" onclick="verificarCpf()">
+    <button class="btn" id="btnCpf">
       <div class="spinner"></div>
       <span class="btn-label">Verificar acesso →</span>
     </button>
@@ -126,7 +125,7 @@ input.error { border-color:var(--error); }
       <label for="senhaConfirm">Confirmar senha</label>
       <input type="password" id="senhaConfirm" placeholder="Repita a senha">
     </div>
-    <button class="btn" id="btnSenha" onclick="criarConta()">
+    <button class="btn" id="btnSenha">
       <div class="spinner"></div>
       <span class="btn-label">Criar minha conta →</span>
     </button>
@@ -138,24 +137,20 @@ input.error { border-color:var(--error); }
     <div class="success-icon">🎉</div>
     <h1>Bem-vinda à <strong>IRES!</strong></h1>
     <p class="subtitle">Sua conta foi criada! Agora você tem acesso completo à plataforma de embaixadoras.</p>
-    <!--
-      ⚠️  Altere o href abaixo para o link real da sua plataforma de membros.
-      Exemplo: "https://plataforma.iresembaixadoras.com.br"
-    -->
     <a href="https://evbergbraga-sketch.github.io/LPIRES/index.html" class="btn-plat">
       Acessar a plataforma →
     </a>
   </div>
 </div>
 
+<!-- Supabase carregado no final do body, antes do script principal -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-// ─── CONFIGURAÇÃO SUPABASE ───────────────────────────────────────────────────
-// ⚠️  Substitua SUA_ANON_KEY_AQUI pela anon key do seu projeto no Supabase.
-// Encontre em: Supabase → Settings → API → anon / public
 const SUPABASE_URL      = 'https://cqhcbbrpxytpybgnpxys.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxaGNiYnJweHl0cHliZ25weHlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjAxOTgsImV4cCI6MjA5MjA5NjE5OH0.UP99BYcl_lgOn071gL1TEOufjjFb_eQ4b1yHieLXJXg';
-const { createClient } = window.supabase;
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 let embaixadoraData = null;
 
 // ─── MÁSCARA CPF ─────────────────────────────────────────────────────────────
@@ -177,9 +172,7 @@ async function verificarCpf() {
 
   btn.disabled = true; btn.classList.add('loading'); msg.textContent = '';
 
-  // Chama a função RPC segura definida no schema do Supabase
-  const { data, error } = await supabase
-    .rpc('verificar_cpf_pago', { cpf_input: cpfRaw });
+  const { data, error } = await supabase.rpc('verificar_cpf_pago', { cpf_input: cpfRaw });
 
   btn.disabled = false; btn.classList.remove('loading');
 
@@ -232,19 +225,21 @@ async function criarConta() {
     return;
   }
 
-  // Vincula user_id ao registro da embaixadora na tabela
   await supabase
-    .from('embaixadoras')
+    .from('lp_purchases')
     .update({ user_id: authData.user.id })
-    .eq('id', embaixadoraData.id);
+    .eq('cpf', embaixadoraData.cpf);
 
   btn.disabled = false; btn.classList.remove('loading');
   document.getElementById('stepSenha').classList.remove('active');
   document.getElementById('stepSucesso').classList.add('active');
 }
 
-// Enter navega entre steps
-document.addEventListener('keydown', e => {
+// ─── EVENTOS ─────────────────────────────────────────────────────────────────
+document.getElementById('btnCpf').addEventListener('click', verificarCpf);
+document.getElementById('btnSenha').addEventListener('click', criarConta);
+
+document.addEventListener('keydown', function(e) {
   if (e.key !== 'Enter') return;
   if (document.getElementById('stepCpf').classList.contains('active')) verificarCpf();
   else if (document.getElementById('stepSenha').classList.contains('active')) criarConta();
