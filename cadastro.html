@@ -152,6 +152,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let embaixadoraData = null;
 
+// Limpa sessão antiga que possa estar no localStorage
+_sb.auth.signOut().catch(() => {});
+
 // ─── MÁSCARA CPF ─────────────────────────────────────────────────────────────
 document.getElementById('cpfInput').addEventListener('input', function(e) {
   let v = e.target.value.replace(/\D/g,'').substring(0,11);
