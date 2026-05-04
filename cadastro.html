@@ -149,7 +149,7 @@ input.error { border-color:var(--error); }
 const SUPABASE_URL      = 'https://cqhcbbrpxytpybgnpxys.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxaGNiYnJweHl0cHliZ25weHlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjAxOTgsImV4cCI6MjA5MjA5NjE5OH0.UP99BYcl_lgOn071gL1TEOufjjFb_eQ4b1yHieLXJXg';
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let embaixadoraData = null;
 
 // ─── MÁSCARA CPF ─────────────────────────────────────────────────────────────
@@ -171,7 +171,7 @@ async function verificarCpf() {
 
   btn.disabled = true; btn.classList.add('loading'); msg.textContent = '';
 
-  const { data, error } = await supabase.rpc('verificar_cpf_pago', { p_cpf: cpfRaw });
+  const { data, error } = await _sb.rpc('verificar_cpf_pago', { p_cpf: cpfRaw });
 
   btn.disabled = false; btn.classList.remove('loading');
 
@@ -202,7 +202,7 @@ async function criarConta() {
 
   btn.disabled = true; btn.classList.add('loading'); msg.textContent = '';
 
-  const { data: authData, error: authError } = await supabase.auth.signUp({
+  const { data: authData, error: authError } = await _sb.auth.signUp({
     email:    embaixadoraData.email,
     password: senha,
     options: {
@@ -218,7 +218,7 @@ async function criarConta() {
     return;
   }
 
-  await supabase
+  await _sb
     .from('lp_purchases')
     .update({ user_id: authData.user.id })
     .eq('cpf', embaixadoraData.cpf);
