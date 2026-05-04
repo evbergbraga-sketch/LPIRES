@@ -205,41 +205,47 @@ async function criarConta() {
 
   btn.disabled = true; btn.classList.add('loading'); msg.textContent = '';
 
-  // Tenta criar conta
+  // Cria conta com email e senha
   const { data: authData, error: authError } = await _sb.auth.signUp({
     email:    embaixadoraData.email,
     password: senha,
-    options: { data: { full_name: embaixadoraData.nome } }
+    options:  { data: { full_name: embaixadoraData.nome } }
   });
 
   if (authError) {
-    // Usuário já existe — tenta fazer login direto
-    const { data: loginData, error: loginError } = await _sb.auth.signInWithPassword({
-      email:    embaixadoraData.email,
-      password: senha
-    });
-
-    if (loginError) {
-      btn.disabled = false; btn.classList.remove('loading');
-      msg.textContent = 'Este e-mail já possui conta. Acesse a plataforma com sua senha atual.';
-      setTimeout(() => {
-        window.location.href = 'https://iresembaixadoras.com.br/painel.html';
-      }, 2000);
-      return;
-    }
-
-    // Login ok — redireciona
     btn.disabled = false; btn.classList.remove('loading');
-    document.getElementById('stepSenha').classList.remove('active');
-    document.getElementById('stepSucesso').classList.add('active');
+    // Email já cadastrado — redireciona para login
+    if (authError.message?.toLowerCase().includes('already') || authError.status === 422) {
+      msg.textContent = 'Este e-mail já tem conta. Redirecionando para a plataforma...';
+      setTimeout(() => { window.location.href = 'https://iresembaixadoras.com.br/painel.html'; }, 2000);
+    } else {
+      msg.textContent = 'Erro ao criar conta: ' + authError.message;
+    }
     return;
   }
 
-  // Conta criada — cria profile no Supabase
+  // Cria profile como embaixadora
   if (authData.user) {
     await _sb.from('profiles').upsert({
       id:        authData.user.id,
       full_name: embaixadoraData.nome,
+      email:     embaixadoraData.email,
+      phone:     embaixadoraData.whatsapp || '',
+      role:      'embaixadora',
+      status:    'active',
+      nivel:     'bronze'
+    });
+
+    // Marca como ativada na LP
+    await _sb.from('lp_purchases')
+      .update({ activated_at: new Date().toISOString() })
+      .eq('cpf', embaixadoraData.cpf);
+  }
+
+  btn.disabled = false; btn.classList.remove('loading');
+  document.getElementById('stepSenha').classList.remove('active');
+  document.getElementById('stepSucesso').classList.add('active');
+}
       email:     embaixadoraData.email,
       phone:     embaixadoraData.whatsapp,
       role:      'embaixadora',
