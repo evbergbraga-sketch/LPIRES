@@ -205,26 +205,48 @@ async function criarConta() {
 
   btn.disabled = true; btn.classList.add('loading'); msg.textContent = '';
 
+  // Tenta criar conta
   const { data: authData, error: authError } = await _sb.auth.signUp({
     email:    embaixadoraData.email,
     password: senha,
-    options: {
-      data: { nome: embaixadoraData.nome, cpf: embaixadoraData.cpf }
-    }
+    options: { data: { full_name: embaixadoraData.nome } }
   });
 
   if (authError) {
+    // Usuário já existe — tenta fazer login direto
+    const { data: loginData, error: loginError } = await _sb.auth.signInWithPassword({
+      email:    embaixadoraData.email,
+      password: senha
+    });
+
+    if (loginError) {
+      btn.disabled = false; btn.classList.remove('loading');
+      msg.textContent = 'Este e-mail já possui conta. Acesse a plataforma com sua senha atual.';
+      setTimeout(() => {
+        window.location.href = 'https://iresembaixadoras.com.br/painel.html';
+      }, 2000);
+      return;
+    }
+
+    // Login ok — redireciona
     btn.disabled = false; btn.classList.remove('loading');
-    msg.textContent = authError.message === 'User already registered'
-      ? 'Este e-mail já possui conta. Acesse a plataforma normalmente.'
-      : 'Erro ao criar conta. Tente novamente.';
+    document.getElementById('stepSenha').classList.remove('active');
+    document.getElementById('stepSucesso').classList.add('active');
     return;
   }
 
-  await _sb
-    .from('lp_purchases')
-    .update({ user_id: authData.user.id })
-    .eq('cpf', embaixadoraData.cpf);
+  // Conta criada — cria profile no Supabase
+  if (authData.user) {
+    await _sb.from('profiles').upsert({
+      id:        authData.user.id,
+      full_name: embaixadoraData.nome,
+      email:     embaixadoraData.email,
+      phone:     embaixadoraData.whatsapp,
+      role:      'embaixadora',
+      status:    'active',
+      nivel:     'bronze'
+    });
+  }
 
   btn.disabled = false; btn.classList.remove('loading');
   document.getElementById('stepSenha').classList.remove('active');
