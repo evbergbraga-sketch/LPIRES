@@ -4,81 +4,36 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Criar Conta — IRES Embaixadoras</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg: #3a0e1d; --bg2: #2d0a16; --pink: #5c1a2e;
-  --accent: #c49a7a; --light: #fdf8f3; --gray: #b89088;
-  --border: rgba(196,154,122,0.2); --error: #ff6b6b; --success: #6bcb77;
-  --ff: 'DM Sans', system-ui, sans-serif;
-  --ff-serif: 'Playfair Display', Georgia, serif;
-}
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-  background:var(--bg); color:var(--light); font-family:var(--ff);
-  min-height:100vh; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; padding:24px;
-}
-.card {
-  background:rgba(255,255,255,0.04); border:1px solid var(--border);
-  border-radius:20px; padding:48px 40px; width:100%; max-width:440px;
-  text-align:center;
-}
-@media(max-width:480px) { .card { padding:32px 24px; } }
-.logo-circle {
-  width:56px; height:56px; border-radius:50%;
-  background:var(--pink); border:1px solid var(--border);
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  margin:0 auto 24px;
-}
-.logo-circle span:first-child { font-family:var(--ff-serif); font-size:16px; font-weight:600; }
-.logo-circle span:last-child { font-size:8px; letter-spacing:1.5px; color:var(--accent); }
-h1 { font-family:var(--ff-serif); font-style:italic; font-size:1.8rem; font-weight:400; margin-bottom:8px; }
-h1 strong { font-style:normal; color:var(--accent); }
-.subtitle { color:var(--gray); font-size:14px; margin-bottom:32px; line-height:1.55; }
-.step { display:none; }
-.step.active { display:block; }
-.form-group { margin-bottom:18px; text-align:left; }
-label { display:block; font-size:11px; font-weight:700; color:var(--accent); margin-bottom:7px; letter-spacing:1px; text-transform:uppercase; }
-input {
-  width:100%; padding:14px 16px;
-  background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:10px;
-  color:var(--light); font-family:var(--ff); font-size:16px; outline:none;
-  transition:border-color 0.2s;
-}
-input::placeholder { color:rgba(184,144,136,0.4); }
-input:focus { border-color:var(--accent); }
-.btn {
-  width:100%; padding:15px; border:none; border-radius:10px;
-  background:linear-gradient(135deg, var(--accent), #b8845c);
-  color:var(--bg2); font-family:var(--ff); font-size:15px; font-weight:700;
-  cursor:pointer; transition:all 0.2s; margin-top:4px;
-  display:flex; align-items:center; justify-content:center; gap:8px;
-}
-.btn:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 6px 20px rgba(196,154,122,0.3); }
-.btn:disabled { opacity:0.55; cursor:not-allowed; transform:none; }
-.spinner {
-  width:16px; height:16px; border-radius:50%;
-  border:2px solid rgba(0,0,0,0.2); border-top-color:var(--bg2);
-  animation:spin 0.8s linear infinite; display:none;
-}
-.btn.loading .spinner { display:block; }
-.btn.loading .btn-label { display:none; }
-.msg { font-size:13px; margin-top:12px; min-height:20px; line-height:1.4; }
-.msg.error { color:var(--error); }
-.msg.success { color:var(--success); }
-.success-icon { font-size:52px; margin-bottom:20px; }
-.btn-plat {
-  display:inline-flex; align-items:center; gap:8px;
-  margin-top:28px; padding:15px 36px; border-radius:50px;
-  background:linear-gradient(135deg, var(--accent), #b8845c);
-  color:var(--bg2); font-weight:700; font-size:15px;
-  text-decoration:none; transition:all 0.2s;
-}
-.btn-plat:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(196,154,122,0.3); }
-@keyframes spin { to { transform:rotate(360deg); } }
+:root { --bg:#3a0e1d;--bg2:#2d0a16;--pink:#5c1a2e;--accent:#c49a7a;--light:#fdf8f3;--gray:#b89088;--border:rgba(196,154,122,0.2);--error:#ff6b6b;--success:#6bcb77;--ff:'DM Sans',system-ui,sans-serif;--ff-serif:'Playfair Display',Georgia,serif; }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--light);font-family:var(--ff);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+.card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;padding:48px 40px;width:100%;max-width:440px;text-align:center;}
+@media(max-width:480px){.card{padding:32px 24px;}}
+.logo-circle{width:56px;height:56px;border-radius:50%;background:var(--pink);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 24px;}
+.logo-circle span:first-child{font-family:var(--ff-serif);font-size:16px;font-weight:600;}
+.logo-circle span:last-child{font-size:8px;letter-spacing:1.5px;color:var(--accent);}
+h1{font-family:var(--ff-serif);font-style:italic;font-size:1.8rem;font-weight:400;margin-bottom:8px;}
+h1 strong{font-style:normal;color:var(--accent);}
+.subtitle{color:var(--gray);font-size:14px;margin-bottom:32px;line-height:1.55;}
+.step{display:none;} .step.active{display:block;}
+.form-group{margin-bottom:18px;text-align:left;}
+label{display:block;font-size:11px;font-weight:700;color:var(--accent);margin-bottom:7px;letter-spacing:1px;text-transform:uppercase;}
+input{width:100%;padding:14px 16px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;color:var(--light);font-family:var(--ff);font-size:16px;outline:none;transition:border-color 0.2s;}
+input::placeholder{color:rgba(184,144,136,0.4);}
+input:focus{border-color:var(--accent);}
+.btn{width:100%;padding:15px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--accent),#b8845c);color:var(--bg2);font-family:var(--ff);font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(196,154,122,0.3);}
+.btn:disabled{opacity:0.55;cursor:not-allowed;transform:none;}
+.spinner{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,0.2);border-top-color:var(--bg2);animation:spin 0.8s linear infinite;display:none;}
+.btn.loading .spinner{display:block;} .btn.loading .btn-label{display:none;}
+.msg{font-size:13px;margin-top:12px;min-height:20px;line-height:1.4;}
+.msg.error{color:var(--error);} .msg.success{color:var(--success);}
+.success-icon{font-size:52px;margin-bottom:20px;}
+.btn-plat{display:inline-flex;align-items:center;gap:8px;margin-top:28px;padding:15px 36px;border-radius:50px;background:linear-gradient(135deg,var(--accent),#b8845c);color:var(--bg2);font-weight:700;font-size:15px;text-decoration:none;transition:all 0.2s;}
+.btn-plat:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(196,154,122,0.3);}
+@keyframes spin{to{transform:rotate(360deg);}}
 </style>
 </head>
 <body>
@@ -88,7 +43,7 @@ input:focus { border-color:var(--accent); }
   <!-- STEP 1: VALIDA CPF -->
   <div id="stepCpf" class="step active">
     <h1>Criar sua <strong>conta</strong></h1>
-    <p class="subtitle">Informe o CPF utilizado no pagamento para liberar seu acesso.</p>
+    <p class="subtitle">Informe o CPF utilizado no pagamento para liberar seu acesso à plataforma IRES.</p>
     <div class="form-group">
       <label for="cpfInput">CPF</label>
       <input type="text" id="cpfInput" placeholder="000.000.000-00" maxlength="14" inputmode="numeric">
@@ -97,13 +52,13 @@ input:focus { border-color:var(--accent); }
       <div class="spinner"></div>
       <span class="btn-label">Verificar acesso →</span>
     </button>
-    <p class="msg" id="cpfMsg"></p>
+    <p class="msg error" id="cpfMsg"></p>
   </div>
 
   <!-- STEP 2: CRIA SENHA -->
   <div id="stepSenha" class="step">
     <h1>Crie sua <strong>senha</strong></h1>
-    <p class="subtitle" id="senhaSubtitle">Defina sua senha de acesso à plataforma IRES.</p>
+    <p class="subtitle">Defina sua senha de acesso à plataforma IRES.</p>
     <div class="form-group">
       <label for="senhaInput">Senha</label>
       <input type="password" id="senhaInput" placeholder="Mínimo 8 caracteres">
@@ -116,14 +71,14 @@ input:focus { border-color:var(--accent); }
       <div class="spinner"></div>
       <span class="btn-label">Criar minha conta →</span>
     </button>
-    <p class="msg" id="senhaMsg"></p>
+    <p class="msg error" id="senhaMsg"></p>
   </div>
 
   <!-- STEP 3: SUCESSO -->
   <div id="stepSucesso" class="step">
     <div class="success-icon">🎉</div>
     <h1>Bem-vinda à <strong>IRES!</strong></h1>
-    <p class="subtitle">Conta criada com sucesso! Você já pode acessar a plataforma.</p>
+    <p class="subtitle">Sua conta foi criada! Você já tem acesso completo à plataforma.</p>
     <a href="https://iresembaixadoras.com.br/painel.html" class="btn-plat">Acessar a plataforma →</a>
   </div>
 </div>
@@ -133,8 +88,10 @@ input:focus { border-color:var(--accent); }
 const SUPABASE_URL      = 'https://cqhcbbrpxytpybgnpxys.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxaGNiYnJweHl0cHliZ25weHlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjAxOTgsImV4cCI6MjA5MjA5NjE5OH0.UP99BYcl_lgOn071gL1TEOufjjFb_eQ4b1yHieLXJXg';
 const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-let _emb = null;
 
+let _dados = null; // dados retornados pelo verificar_cpf_pago
+
+// Limpa sessão anterior
 _sb.auth.signOut().catch(() => {});
 
 // Máscara CPF
@@ -146,17 +103,13 @@ document.getElementById('cpfInput').addEventListener('input', function(e) {
   e.target.value = v;
 });
 
-// STEP 1 — Verifica CPF no lp_purchases
+// STEP 1 — Verifica CPF no lp_purchases (status = 'paid')
 async function verificarCpf() {
   const btn    = document.getElementById('btnCpf');
   const msg    = document.getElementById('cpfMsg');
   const cpfRaw = document.getElementById('cpfInput').value.replace(/\D/g,'');
 
-  if (cpfRaw.length !== 11) {
-    msg.className = 'msg error';
-    msg.textContent = 'Informe um CPF válido.';
-    return;
-  }
+  if (cpfRaw.length !== 11) { msg.textContent = 'Informe um CPF válido com 11 dígitos.'; return; }
 
   btn.disabled = true; btn.classList.add('loading'); msg.textContent = '';
 
@@ -164,79 +117,64 @@ async function verificarCpf() {
 
   btn.disabled = false; btn.classList.remove('loading');
 
-  if (error) {
-    msg.className = 'msg error';
-    msg.textContent = 'Erro ao verificar CPF. Tente novamente.';
-    return;
-  }
+  if (error) { msg.textContent = 'Erro ao verificar. Tente novamente.'; console.error(error); return; }
+  if (!data?.ok) { msg.textContent = data?.msg || 'CPF não encontrado ou pagamento pendente.'; return; }
 
-  if (!data?.ok) {
-    msg.className = 'msg error';
-    msg.textContent = data?.msg || 'CPF não encontrado ou pagamento pendente.';
-    return;
-  }
-
-  // Dados vindos da lp_purchases (nome, email, whatsapp)
-  _emb = { cpf: cpfRaw, nome: data.nome, email: data.email, whatsapp: data.whatsapp };
-
-  document.getElementById('senhaSubtitle').textContent =
-    `Olá, ${data.nome.split(' ')[0]}! Defina sua senha de acesso.`;
+  // Guarda dados vindos do lp_purchases (nome, email, whatsapp)
+  _dados = { nome: data.nome, email: data.email, whatsapp: data.whatsapp, cpf: cpfRaw };
 
   document.getElementById('stepCpf').classList.remove('active');
   document.getElementById('stepSenha').classList.add('active');
 }
 
-// STEP 2 — Cria usuário + profile + atualiza lp_purchases
+// STEP 2 — Cria usuário no Supabase Auth + profile + atualiza lp_purchases
 async function criarConta() {
   const btn     = document.getElementById('btnSenha');
   const msg     = document.getElementById('senhaMsg');
   const senha   = document.getElementById('senhaInput').value;
   const confirma = document.getElementById('senhaConfirm').value;
 
-  if (senha.length < 8) { msg.className='msg error'; msg.textContent='Mínimo 8 caracteres.'; return; }
-  if (senha !== confirma) { msg.className='msg error'; msg.textContent='As senhas não coincidem.'; return; }
+  if (senha.length < 8)    { msg.textContent = 'A senha deve ter pelo menos 8 caracteres.'; return; }
+  if (senha !== confirma)  { msg.textContent = 'As senhas não coincidem.'; return; }
 
   btn.disabled = true; btn.classList.add('loading'); msg.textContent = '';
 
-  // 1. Cria usuário no Supabase Auth
+  // 1. Cria conta no Supabase Auth
   const { data: authData, error: authError } = await _sb.auth.signUp({
-    email:    _emb.email,
+    email:    _dados.email,
     password: senha,
-    options:  { data: { full_name: _emb.nome } }
+    options:  { data: { full_name: _dados.nome } }
   });
 
   if (authError) {
     btn.disabled = false; btn.classList.remove('loading');
-    if (authError.status === 422 || authError.message?.toLowerCase().includes('already')) {
-      msg.className = 'msg error';
-      msg.textContent = 'Este e-mail já possui conta. Redirecionando...';
+    if (authError.status === 422 || authError.message?.includes('already')) {
+      msg.textContent = 'Este e-mail já tem conta. Redirecionando para a plataforma...';
       setTimeout(() => { window.location.href = 'https://iresembaixadoras.com.br/painel.html'; }, 2500);
     } else {
-      msg.className = 'msg error';
       msg.textContent = 'Erro ao criar conta: ' + authError.message;
     }
     return;
   }
 
   const userId = authData.user?.id;
+  if (!userId) { btn.disabled = false; btn.classList.remove('loading'); msg.textContent = 'Erro inesperado. Tente novamente.'; return; }
 
-  if (userId) {
-    // 2. Cria profile como embaixadora bronze ativa
-    await _sb.from('profiles').upsert({
-      id:        userId,
-      full_name: _emb.nome,
-      email:     _emb.email,
-      phone:     _emb.whatsapp || '',
-      role:      'embaixadora',
-      status:    'active',
-      nivel:     'bronze'
-    });
+  // 2. Cria profile como embaixadora Bronze
+  await _sb.from('profiles').upsert({
+    id:        userId,
+    full_name: _dados.nome,
+    email:     _dados.email,
+    phone:     _dados.whatsapp || '',
+    role:      'embaixadora',
+    status:    'active',
+    nivel:     'bronze'
+  });
 
-    // 3. Atualiza lp_purchases: status=activated + activated_at
-    await _sb.from('lp_purchases')
-      .update({ status: 'activated', activated_at: new Date().toISOString() })
-      .eq('cpf', _emb.cpf);
-  }
+  // 3. Marca lp_purchases como ativado
+  await _sb.from('lp_purchases')
+    .update({ status: 'activated', activated_at: new Date().toISOString() })
+    .eq('cpf', _dados.cpf);
 
   btn.disabled = false; btn.classList.remove('loading');
   document.getElementById('stepSenha').classList.remove('active');
@@ -247,8 +185,8 @@ document.getElementById('btnCpf').addEventListener('click', verificarCpf);
 document.getElementById('btnSenha').addEventListener('click', criarConta);
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Enter') return;
-  if (document.getElementById('stepCpf').classList.contains('active')) verificarCpf();
-  else if (document.getElementById('stepSenha').classList.contains('active')) criarConta();
+  if (document.getElementById('stepCpf').classList.contains('active'))   verificarCpf();
+  if (document.getElementById('stepSenha').classList.contains('active')) criarConta();
 });
 </script>
 </body>
