@@ -27,7 +27,6 @@ body {
   text-align:center;
 }
 @media(max-width:480px) { .card { padding:32px 24px; } }
-
 .logo-circle {
   width:56px; height:56px; border-radius:50%;
   background:var(--pink); border:1px solid var(--border);
@@ -36,26 +35,21 @@ body {
 }
 .logo-circle span:first-child { font-family:var(--ff-serif); font-size:16px; font-weight:600; }
 .logo-circle span:last-child { font-size:8px; letter-spacing:1.5px; color:var(--accent); }
-
 h1 { font-family:var(--ff-serif); font-style:italic; font-size:1.8rem; font-weight:400; margin-bottom:8px; }
 h1 strong { font-style:normal; color:var(--accent); }
 .subtitle { color:var(--gray); font-size:14px; margin-bottom:32px; line-height:1.55; }
-
 .step { display:none; }
 .step.active { display:block; }
-
 .form-group { margin-bottom:18px; text-align:left; }
 label { display:block; font-size:11px; font-weight:700; color:var(--accent); margin-bottom:7px; letter-spacing:1px; text-transform:uppercase; }
 input {
   width:100%; padding:14px 16px;
   background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:10px;
-  color:var(--light); font-family:var(--ff); font-size:15px; outline:none;
+  color:var(--light); font-family:var(--ff); font-size:16px; outline:none;
   transition:border-color 0.2s;
 }
 input::placeholder { color:rgba(184,144,136,0.4); }
 input:focus { border-color:var(--accent); }
-input.error { border-color:var(--error); }
-
 .btn {
   width:100%; padding:15px; border:none; border-radius:10px;
   background:linear-gradient(135deg, var(--accent), #b8845c);
@@ -72,11 +66,9 @@ input.error { border-color:var(--error); }
 }
 .btn.loading .spinner { display:block; }
 .btn.loading .btn-label { display:none; }
-
 .msg { font-size:13px; margin-top:12px; min-height:20px; line-height:1.4; }
 .msg.error { color:var(--error); }
 .msg.success { color:var(--success); }
-
 .success-icon { font-size:52px; margin-bottom:20px; }
 .btn-plat {
   display:inline-flex; align-items:center; gap:8px;
@@ -86,37 +78,32 @@ input.error { border-color:var(--error); }
   text-decoration:none; transition:all 0.2s;
 }
 .btn-plat:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(196,154,122,0.3); }
-
 @keyframes spin { to { transform:rotate(360deg); } }
 </style>
 </head>
 <body>
-
 <div class="card">
-  <div class="logo-circle">
-    <span>ires</span>
-    <span>EMB.</span>
-  </div>
+  <div class="logo-circle"><span>ires</span><span>EMB.</span></div>
 
   <!-- STEP 1: VALIDA CPF -->
   <div id="stepCpf" class="step active">
     <h1>Criar sua <strong>conta</strong></h1>
-    <p class="subtitle">Informe o CPF utilizado no pagamento para liberar seu acesso à plataforma IRES.</p>
+    <p class="subtitle">Informe o CPF utilizado no pagamento para liberar seu acesso.</p>
     <div class="form-group">
       <label for="cpfInput">CPF</label>
-      <input type="text" id="cpfInput" placeholder="000.000.000-00" maxlength="14">
+      <input type="text" id="cpfInput" placeholder="000.000.000-00" maxlength="14" inputmode="numeric">
     </div>
     <button class="btn" id="btnCpf">
       <div class="spinner"></div>
       <span class="btn-label">Verificar acesso →</span>
     </button>
-    <p class="msg error" id="cpfMsg"></p>
+    <p class="msg" id="cpfMsg"></p>
   </div>
 
   <!-- STEP 2: CRIA SENHA -->
   <div id="stepSenha" class="step">
     <h1>Crie sua <strong>senha</strong></h1>
-    <p class="subtitle">Defina sua senha de acesso à plataforma IRES.</p>
+    <p class="subtitle" id="senhaSubtitle">Defina sua senha de acesso à plataforma IRES.</p>
     <div class="form-group">
       <label for="senhaInput">Senha</label>
       <input type="password" id="senhaInput" placeholder="Mínimo 8 caracteres">
@@ -129,48 +116,47 @@ input.error { border-color:var(--error); }
       <div class="spinner"></div>
       <span class="btn-label">Criar minha conta →</span>
     </button>
-    <p class="msg error" id="senhaMsg"></p>
+    <p class="msg" id="senhaMsg"></p>
   </div>
 
   <!-- STEP 3: SUCESSO -->
   <div id="stepSucesso" class="step">
     <div class="success-icon">🎉</div>
     <h1>Bem-vinda à <strong>IRES!</strong></h1>
-    <p class="subtitle">Sua conta foi criada! Agora você tem acesso completo à plataforma de embaixadoras.</p>
-    <a href="https://evbergbraga-sketch.github.io/LPIRES/index.html" class="btn-plat">
-      Acessar a plataforma →
-    </a>
+    <p class="subtitle">Conta criada com sucesso! Você já pode acessar a plataforma.</p>
+    <a href="https://iresembaixadoras.com.br/painel.html" class="btn-plat">Acessar a plataforma →</a>
   </div>
 </div>
 
-<!-- Supabase carregado no final do body, antes do script principal -->
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL      = 'https://cqhcbbrpxytpybgnpxys.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxaGNiYnJweHl0cHliZ25weHlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjAxOTgsImV4cCI6MjA5MjA5NjE5OH0.UP99BYcl_lgOn071gL1TEOufjjFb_eQ4b1yHieLXJXg';
-
 const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-let embaixadoraData = null;
+let _emb = null;
 
-// Limpa sessão antiga que possa estar no localStorage
 _sb.auth.signOut().catch(() => {});
 
-// ─── MÁSCARA CPF ─────────────────────────────────────────────────────────────
+// Máscara CPF
 document.getElementById('cpfInput').addEventListener('input', function(e) {
   let v = e.target.value.replace(/\D/g,'').substring(0,11);
-  if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+  if (v.length > 9)      v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
   else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
   else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
   e.target.value = v;
 });
 
-// ─── STEP 1: VERIFICA CPF ────────────────────────────────────────────────────
+// STEP 1 — Verifica CPF no lp_purchases
 async function verificarCpf() {
-  const btn = document.getElementById('btnCpf');
-  const msg = document.getElementById('cpfMsg');
+  const btn    = document.getElementById('btnCpf');
+  const msg    = document.getElementById('cpfMsg');
   const cpfRaw = document.getElementById('cpfInput').value.replace(/\D/g,'');
 
-  if (cpfRaw.length !== 11) { msg.textContent = 'Informe um CPF válido (11 dígitos).'; return; }
+  if (cpfRaw.length !== 11) {
+    msg.className = 'msg error';
+    msg.textContent = 'Informe um CPF válido.';
+    return;
+  }
 
   btn.disabled = true; btn.classList.add('loading'); msg.textContent = '';
 
@@ -178,80 +164,78 @@ async function verificarCpf() {
 
   btn.disabled = false; btn.classList.remove('loading');
 
-  if (error || !data) {
+  if (error) {
+    msg.className = 'msg error';
     msg.textContent = 'Erro ao verificar CPF. Tente novamente.';
     return;
   }
 
-  if (!data.ok) {
-    msg.textContent = data.msg || 'CPF não encontrado ou pagamento pendente.';
+  if (!data?.ok) {
+    msg.className = 'msg error';
+    msg.textContent = data?.msg || 'CPF não encontrado ou pagamento pendente.';
     return;
   }
 
-  embaixadoraData = { ...data, cpf: cpfRaw };
+  // Dados vindos da lp_purchases (nome, email, whatsapp)
+  _emb = { cpf: cpfRaw, nome: data.nome, email: data.email, whatsapp: data.whatsapp };
+
+  document.getElementById('senhaSubtitle').textContent =
+    `Olá, ${data.nome.split(' ')[0]}! Defina sua senha de acesso.`;
+
   document.getElementById('stepCpf').classList.remove('active');
   document.getElementById('stepSenha').classList.add('active');
 }
 
-// ─── STEP 2: CRIA CONTA ──────────────────────────────────────────────────────
+// STEP 2 — Cria usuário + profile + atualiza lp_purchases
 async function criarConta() {
-  const btn = document.getElementById('btnSenha');
-  const msg = document.getElementById('senhaMsg');
-  const senha    = document.getElementById('senhaInput').value;
+  const btn     = document.getElementById('btnSenha');
+  const msg     = document.getElementById('senhaMsg');
+  const senha   = document.getElementById('senhaInput').value;
   const confirma = document.getElementById('senhaConfirm').value;
 
-  if (senha.length < 8) { msg.textContent = 'A senha deve ter pelo menos 8 caracteres.'; return; }
-  if (senha !== confirma) { msg.textContent = 'As senhas não coincidem.'; return; }
+  if (senha.length < 8) { msg.className='msg error'; msg.textContent='Mínimo 8 caracteres.'; return; }
+  if (senha !== confirma) { msg.className='msg error'; msg.textContent='As senhas não coincidem.'; return; }
 
   btn.disabled = true; btn.classList.add('loading'); msg.textContent = '';
 
-  // Cria conta com email e senha
+  // 1. Cria usuário no Supabase Auth
   const { data: authData, error: authError } = await _sb.auth.signUp({
-    email:    embaixadoraData.email,
+    email:    _emb.email,
     password: senha,
-    options:  { data: { full_name: embaixadoraData.nome } }
+    options:  { data: { full_name: _emb.nome } }
   });
 
   if (authError) {
     btn.disabled = false; btn.classList.remove('loading');
-    // Email já cadastrado — redireciona para login
-    if (authError.message?.toLowerCase().includes('already') || authError.status === 422) {
-      msg.textContent = 'Este e-mail já tem conta. Redirecionando para a plataforma...';
-      setTimeout(() => { window.location.href = 'https://iresembaixadoras.com.br/painel.html'; }, 2000);
+    if (authError.status === 422 || authError.message?.toLowerCase().includes('already')) {
+      msg.className = 'msg error';
+      msg.textContent = 'Este e-mail já possui conta. Redirecionando...';
+      setTimeout(() => { window.location.href = 'https://iresembaixadoras.com.br/painel.html'; }, 2500);
     } else {
+      msg.className = 'msg error';
       msg.textContent = 'Erro ao criar conta: ' + authError.message;
     }
     return;
   }
 
-  // Cria profile como embaixadora
-  if (authData.user) {
+  const userId = authData.user?.id;
+
+  if (userId) {
+    // 2. Cria profile como embaixadora bronze ativa
     await _sb.from('profiles').upsert({
-      id:        authData.user.id,
-      full_name: embaixadoraData.nome,
-      email:     embaixadoraData.email,
-      phone:     embaixadoraData.whatsapp || '',
+      id:        userId,
+      full_name: _emb.nome,
+      email:     _emb.email,
+      phone:     _emb.whatsapp || '',
       role:      'embaixadora',
       status:    'active',
       nivel:     'bronze'
     });
 
-    // Marca como ativada na LP
+    // 3. Atualiza lp_purchases: status=activated + activated_at
     await _sb.from('lp_purchases')
-      .update({ activated_at: new Date().toISOString() })
-      .eq('cpf', embaixadoraData.cpf);
-  }
-
-  btn.disabled = false; btn.classList.remove('loading');
-  document.getElementById('stepSenha').classList.remove('active');
-  document.getElementById('stepSucesso').classList.add('active');
-}
-      email:     embaixadoraData.email,
-      phone:     embaixadoraData.whatsapp,
-      role:      'embaixadora',
-      status:    'active',
-      nivel:     'bronze'
-    });
+      .update({ status: 'activated', activated_at: new Date().toISOString() })
+      .eq('cpf', _emb.cpf);
   }
 
   btn.disabled = false; btn.classList.remove('loading');
@@ -259,10 +243,8 @@ async function criarConta() {
   document.getElementById('stepSucesso').classList.add('active');
 }
 
-// ─── EVENTOS ─────────────────────────────────────────────────────────────────
 document.getElementById('btnCpf').addEventListener('click', verificarCpf);
 document.getElementById('btnSenha').addEventListener('click', criarConta);
-
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Enter') return;
   if (document.getElementById('stepCpf').classList.contains('active')) verificarCpf();
