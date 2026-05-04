@@ -140,6 +140,7 @@ async function criarConta() {
   btn.disabled = true; btn.classList.add('loading'); msg.textContent = '';
 
   // 1. Cria conta no Supabase Auth
+  let userId = null;
   const { data: authData, error: authError } = await _sb.auth.signUp({
     email:    _dados.email,
     password: senha,
@@ -147,17 +148,30 @@ async function criarConta() {
   });
 
   if (authError) {
-    btn.disabled = false; btn.classList.remove('loading');
     if (authError.status === 422 || authError.message?.includes('already')) {
-      msg.textContent = 'Este e-mail já tem conta. Redirecionando para a plataforma...';
-      setTimeout(() => { window.location.href = 'https://iresembaixadoras.com.br/painel.html'; }, 2500);
+      // Usuário já existe — faz login com a senha informada
+      const { data: loginData, error: loginError } = await _sb.auth.signInWithPassword({
+        email:    _dados.email,
+        password: senha
+      });
+      if (loginError) {
+        btn.disabled = false; btn.classList.remove('loading');
+        msg.textContent = 'Este e-mail já tem conta. Tente fazer login na plataforma com sua senha.';
+        setTimeout(() => { window.location.href = 'https://iresembaixadoras.com.br/painel.html'; }, 3000);
+        return;
+      }
+      userId = loginData.user?.id;
     } else {
+      btn.disabled = false; btn.classList.remove('loading');
       msg.textContent = 'Erro ao criar conta: ' + authError.message;
+      return;
     }
-    return;
+  } else {
+    userId = authData.user?.id;
+    // Faz login imediatamente após criar (garante sessão ativa)
+    await _sb.auth.signInWithPassword({ email: _dados.email, password: senha });
   }
 
-  const userId = authData.user?.id;
   if (!userId) { btn.disabled = false; btn.classList.remove('loading'); msg.textContent = 'Erro inesperado. Tente novamente.'; return; }
 
   // 2. Cria profile como embaixadora Bronze
