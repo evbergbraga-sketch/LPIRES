@@ -139,36 +139,41 @@ async function criarConta() {
 
   btn.disabled = true; btn.classList.add('loading'); msg.textContent = '';
 
-  // 1. Cria conta no Supabase Auth
+  // 1. Tenta login primeiro (caso já tenha conta)
   let userId = null;
-  const { data: authData, error: authError } = await _sb.auth.signUp({
+  const { data: loginTentativa, error: loginTentativaError } = await _sb.auth.signInWithPassword({
     email:    _dados.email,
-    password: senha,
-    options:  { data: { full_name: _dados.nome } }
+    password: senha
   });
 
-  if (authError) {
-    if (authError.status === 422 || authError.message?.includes('already')) {
-      // Usuário já existe — faz login com a senha informada
-      const { data: loginData, error: loginError } = await _sb.auth.signInWithPassword({
-        email:    _dados.email,
-        password: senha
-      });
-      if (loginError) {
+  if (!loginTentativaError && loginTentativa?.user) {
+    // Já tem conta e senha bate — segue direto
+    userId = loginTentativa.user.id;
+  } else {
+    // Tenta criar conta nova
+    const { data: authData, error: authError } = await _sb.auth.signUp({
+      email:    _dados.email,
+      password: senha,
+      options:  { data: { full_name: _dados.nome, nome: _dados.nome } }
+    });
+
+    if (authError) {
+      // Email já existe mas senha errada
+      if (authError.message?.includes('already') || authError.status === 422 ||
+          authError.message?.includes('Database') || authError.status === 500) {
         btn.disabled = false; btn.classList.remove('loading');
-        msg.textContent = 'Este e-mail já tem conta. Tente fazer login na plataforma com sua senha.';
+        msg.textContent = 'Este e-mail já tem cadastro. Acesse a plataforma com sua senha anterior.';
+        msg.style.color = '#f59e0b';
         setTimeout(() => { window.location.href = 'https://iresembaixadoras.com.br/painel.html'; }, 3000);
         return;
       }
-      userId = loginData.user?.id;
-    } else {
       btn.disabled = false; btn.classList.remove('loading');
       msg.textContent = 'Erro ao criar conta: ' + authError.message;
       return;
     }
-  } else {
+
     userId = authData.user?.id;
-    // Faz login imediatamente após criar (garante sessão ativa)
+    // Faz login logo após criar para garantir sessão
     await _sb.auth.signInWithPassword({ email: _dados.email, password: senha });
   }
 
